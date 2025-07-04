@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 export default function Detail() {
   const { id } = useParams();
 
-  console.log(id)
+  console.log(id);
 
   return (
     <div className="container mx-auto py-10">

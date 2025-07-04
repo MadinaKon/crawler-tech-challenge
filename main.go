@@ -38,5 +38,5 @@ func main() {
     r.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{"message": "Hello, World!"})
     })
-    r.Run()
+    r.Run("0.0.0.0:8080")
 }
