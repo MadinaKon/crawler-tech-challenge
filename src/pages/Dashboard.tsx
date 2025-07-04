@@ -1,30 +1,6 @@
-import { columns, CrawlerResult } from "@/components/columns";
+import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
-
-const mockData: CrawlerResult[] = [
-  {
-    id: "1",
-    url: "https://example.com",
-    title: "Example Website",
-    htmlVersion: "HTML5",
-    internalLinks: 15,
-    externalLinks: 8,
-    brokenLinks: 2,
-    hasLoginForm: true,
-    status: "done",
-  },
-  {
-    id: "2",
-    url: "https://test.com",
-    title: "Test Site",
-    htmlVersion: "HTML5",
-    internalLinks: 10,
-    externalLinks: 5,
-    brokenLinks: 0,
-    hasLoginForm: false,
-    status: "running",
-  },
-];
+import { mockData } from "../data/mockData";
 
 export default function Dashboard() {
   return (
