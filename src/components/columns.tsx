@@ -1,13 +1,6 @@
+import { ActionsCell } from "@/components/ActionsCell";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
 
 export type CrawlerResult = {
   id: string;
@@ -57,14 +50,14 @@ export const columns: ColumnDef<CrawlerResult>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as CrawlerResult["status"];
-      // Only use supported badge variants
+
       const colors: Record<
         CrawlerResult["status"],
         "secondary" | "default" | "destructive" | "outline"
       > = {
         queued: "secondary",
         running: "default",
-        done: "secondary", // fallback to a supported variant
+        done: "secondary",
         error: "destructive",
       };
       return <Badge variant={colors[status] || "outline"}>{status}</Badge>;
@@ -72,35 +65,6 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="h-8 w-8 p-0"
-            aria-label="More actions"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={() => console.log("view", row.original.id)}
-          >
-            View Details
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => console.log("re-run", row.original.id)}
-          >
-            Re-run Analysis
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => console.log("delete", row.original.id)}
-          >
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => <ActionsCell row={row} />,
   },
 ];
