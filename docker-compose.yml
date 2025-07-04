@@ -4,10 +4,10 @@ services:
     container_name: webcrawler_mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: webcrawler_db
-      MYSQL_USER: webcrawler_user
-      MYSQL_PASSWORD: your_secure_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -21,11 +21,11 @@ services:
     depends_on:
       - mysql
     environment:
-      DB_USER: webcrawler_user
-      DB_PASS: your_secure_password
+      DB_USER: ${MYSQL_USER}
+      DB_PASS: ${MYSQL_PASSWORD}
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: webcrawler_db
+      DB_NAME: ${MYSQL_DATABASE}
     ports:
       - "8080:8080"
 
