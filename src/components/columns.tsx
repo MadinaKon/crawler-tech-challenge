@@ -1,49 +1,62 @@
+// columns.tsx
 import { ActionsCell } from "@/components/ActionsCell";
 import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CrawlerResult = {
-  id: string;
+  id: number;
   url: string;
   title: string;
-  htmlVersion: string;
-  internalLinks: number;
-  externalLinks: number;
-  brokenLinks: number;
-  hasLoginForm: boolean;
-  status: "queued" | "running" | "done" | "error";
+  html_version: string;
+  internal_links: number;
+  external_links: number;
+  inaccessible_links: number;
+  has_login_form: boolean;
+  status: "pending" | "completed" | "failed";
+  created_at: string;
+  updated_at: string;
 };
 
 export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "url",
     header: "URL",
+    cell: ({ row }) => (
+      <div className="max-w-[300px] truncate" title={row.getValue("url")}>
+        {row.getValue("url")}
+      </div>
+    ),
   },
   {
     accessorKey: "title",
     header: "Title",
+    cell: ({ row }) => (
+      <div className="max-w-[200px] truncate" title={row.getValue("title")}>
+        {row.getValue("title") || "N/A"}
+      </div>
+    ),
   },
   {
-    accessorKey: "htmlVersion",
+    accessorKey: "html_version",
     header: "HTML",
+    cell: ({ row }) => row.getValue("html_version") || "N/A",
   },
   {
-    accessorKey: "internalLinks",
+    accessorKey: "internal_links",
     header: "Internal",
   },
   {
-    accessorKey: "externalLinks",
+    accessorKey: "external_links",
     header: "External",
   },
   {
-    accessorKey: "brokenLinks",
-    header: "Broken",
+    accessorKey: "inaccessible_links",
+    header: "Inaccessible",
   },
   {
-    accessorKey: "hasLoginForm",
+    accessorKey: "has_login_form",
     header: "Login?",
-    // cell: ({ row }) => (!!row.getValue("hasLoginForm") ? "Yes" : "No"),
-    cell: ({ row }) => (row.getValue("hasLoginForm") ? "Yes" : "No"),
+    cell: ({ row }) => (row.getValue("has_login_form") ? "Yes" : "No"),
   },
   {
     accessorKey: "status",
@@ -55,12 +68,19 @@ export const columns: ColumnDef<CrawlerResult>[] = [
         CrawlerResult["status"],
         "secondary" | "default" | "destructive" | "outline"
       > = {
-        queued: "secondary",
-        running: "default",
-        done: "secondary",
-        error: "destructive",
+        pending: "secondary",
+        completed: "default",
+        failed: "destructive",
       };
       return <Badge variant={colors[status] || "outline"}>{status}</Badge>;
+    },
+  },
+  {
+    accessorKey: "created_at",
+    header: "Created",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("created_at"));
+      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     },
   },
   {

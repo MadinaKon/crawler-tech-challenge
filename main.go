@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
     "github.com/gin-gonic/gin"
     "github.com/joho/godotenv"
     "webcrawler-backend/internal/database"
+    "webcrawler-backend/internal/handlers"
 )
 
 func main() {
@@ -40,13 +42,29 @@ func main() {
         log.Fatal("Failed to run database migrations:", err)
     }
 
-    r := gin.Default()
-    r.GET("/", func(c *gin.Context) {
-        c.JSON(200, gin.H{"message": "Hello, World!"})
-    })
-    
+    // Initialize handlers
+    crawlHandler := handlers.NewCrawlHandler(db)
 
-+    if err := r.Run("0.0.0.0:8080"); err != nil {
-+        log.Fatal("Failed to start server:", err)
-+    }
+    r := gin.Default()
+
+    // API routes
+    api := r.Group("/api")
+    {
+        api.GET("/crawls", crawlHandler.GetCrawlResults)
+        api.GET("/crawls/:id", crawlHandler.GetCrawlResultByID)
+        api.GET("/crawls/:id/broken-links", crawlHandler.GetBrokenLinks)
+        api.GET("/stats", crawlHandler.GetStats)
+    }
+
+    // Serve static files (React app)
+    r.Static("/static", "./dist")
+    r.LoadHTMLGlob("dist/*.html")
+    
+    // Catch-all route to serve React app
+    r.NoRoute(func(c *gin.Context) {
+        c.File("dist/index.html")
+    })
+
+    log.Println("Server starting on :8080")
+    r.Run("0.0.0.0:8080")
 }
