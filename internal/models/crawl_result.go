@@ -42,7 +42,7 @@ func (j *JSON) Scan(value interface{}) error {
 	}
 	s, ok := value.([]byte)
 	if !ok {
-		return nil
+		return fmt.Errorf("cannot scan %T into JSON", value)
 	}
 	*j = append((*j)[0:0], s...)
 	return nil
