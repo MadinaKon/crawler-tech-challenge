@@ -13,13 +13,18 @@ func main() {
         log.Fatal("Error loading .env file")
     }
 
-    database.Connect()
-
+    // Connect to database using GORM
+    db, err := database.Connect()
+    if err != nil {
+        log.Fatal("Failed to connect to database:", err)
+    }
+    
     // Test connection
-    sqlDB, err := database.DB.DB()
+    sqlDB, err := db.DB()
     if err != nil {
         log.Fatal("Failed to get underlying sql.DB:", err)
     }
+    
     if err := sqlDB.Ping(); err != nil {
         log.Fatal("Failed to ping MySQL:", err)
     }
