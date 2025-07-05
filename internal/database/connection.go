@@ -18,6 +18,11 @@ func Connect() {
     user := os.Getenv("DB_USER")
     password := os.Getenv("DB_PASS")
     dbname := os.Getenv("DB_NAME")
+
+
++   if host == "" || port == "" || user == "" || password == "" || dbname == "" {
++       log.Fatal("Missing required database environment variables")
++   }
     
     dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
         user, password, host, port, dbname)
