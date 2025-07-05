@@ -28,7 +28,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/crawls");
+        const response = await fetch("http://localhost:8080/api/crawls");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

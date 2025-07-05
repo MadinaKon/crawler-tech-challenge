@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -33,9 +32,9 @@ func main() {
     log.Println("Connected to MySQL!")
 
     // Drop existing tables to fix foreign key constraint issues
-    if err := database.DropTables(db); err != nil {
-        log.Fatal("Failed to drop tables:", err)
-    }
+    // if err := database.DropTables(db); err != nil {
+    //     log.Fatal("Failed to drop tables:", err)
+    // }
 
     // Run database migrations
     if err := database.RunMigrations(db); err != nil {
