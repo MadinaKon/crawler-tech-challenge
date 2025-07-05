@@ -1,12 +1,10 @@
 package main
 
 import (
-    "os"
     "log"
-    "database/sql"
-    _ "github.com/go-sql-driver/mysql"
     "github.com/gin-gonic/gin"
     "github.com/joho/godotenv"
+    "webcrawler-backend/internal/database"
 )
 
 func main() {
@@ -15,21 +13,14 @@ func main() {
         log.Fatal("Error loading .env file")
     }
 
-    user := os.Getenv("DB_USER")
-    pass := os.Getenv("DB_PASS")
-    host := os.Getenv("DB_HOST")
-    port := os.Getenv("DB_PORT")
-    name := os.Getenv("DB_NAME")
-
-    dsn := user + ":" + pass + "@tcp(" + host + ":" + port + ")/" + name
-    db, err := sql.Open("mysql", dsn)
-    if err != nil {
-        log.Fatal("Failed to connect to MySQL:", err)
-    }
-    defer db.Close()
+    database.Connect()
 
     // Test connection
-    if err := db.Ping(); err != nil {
+    sqlDB, err := database.DB.DB()
+    if err != nil {
+        log.Fatal("Failed to get underlying sql.DB:", err)
+    }
+    if err := sqlDB.Ping(); err != nil {
         log.Fatal("Failed to ping MySQL:", err)
     }
     log.Println("Connected to MySQL!")
