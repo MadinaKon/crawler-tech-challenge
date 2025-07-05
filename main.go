@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "github.com/gin-gonic/gin"
+    "github.com/gin-contrib/cors"
     "github.com/joho/godotenv"
     "webcrawler-backend/internal/database"
     "webcrawler-backend/internal/handlers"
@@ -45,6 +46,13 @@ func main() {
     crawlHandler := handlers.NewCrawlHandler(db)
 
     r := gin.Default()
+
+   // Configure CORS
+   config := cors.DefaultConfig()
+   config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:5173"}
+   config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+   config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+   r.Use(cors.New(config))
 
     // API routes
     api := r.Group("/api")
