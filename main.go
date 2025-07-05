@@ -30,6 +30,16 @@ func main() {
     }
     log.Println("Connected to MySQL!")
 
+    // Drop existing tables to fix foreign key constraint issues
+    if err := database.DropTables(db); err != nil {
+        log.Fatal("Failed to drop tables:", err)
+    }
+
+    // Run database migrations
+    if err := database.RunMigrations(db); err != nil {
+        log.Fatal("Failed to run database migrations:", err)
+    }
+
     r := gin.Default()
     r.GET("/", func(c *gin.Context) {
         c.JSON(200, gin.H{"message": "Hello, World!"})
