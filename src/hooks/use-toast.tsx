@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 interface ToastOptions {
   title: string;
@@ -61,18 +61,6 @@ const Toast: React.FC<ToastOptions> = ({
   description,
   variant = "default",
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isVisible) return null;
-
   const baseClasses =
     "p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300";
   const variantClasses = {

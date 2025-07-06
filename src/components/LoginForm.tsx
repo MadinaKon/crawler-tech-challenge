@@ -50,7 +50,8 @@ export default function LoginForm({
 
       toast({
         title: "Login successful",
-        description: `Welcome back, ${data.user.name}!`,
+        // description: `Welcome back, ${data.user.name}!`,
+        description: `Welcome back, ${data.user?.name || "user"}!`,
       });
 
       onLoginSuccess(data.access_token, data.user);
@@ -115,7 +116,7 @@ export default function LoginForm({
             Don't have an account? Register
           </button>
         </div>
-        <div className="mt-4 p-3 bg-gray-50 rounded-md">
+        {/* <div className="mt-4 p-3 bg-gray-50 rounded-md">
           <p className="text-sm text-gray-600 mb-2">Demo accounts:</p>
           <p className="text-xs text-gray-500">
             Admin: admin@webcrawler.com / admin123
@@ -123,7 +124,19 @@ export default function LoginForm({
           <p className="text-xs text-gray-500">
             User: user@webcrawler.com / user123
           </p>
-        </div>
+        </div> */}
+
+        {import.meta.env.VITE_SHOW_DEMO === "true" && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-md">
+            <p className="text-sm text-gray-600 mb-2">Demo accounts:</p>
+            <p className="text-xs text-gray-500">
+              Admin: admin@webcrawler.com / admin123
+            </p>
+            <p className="text-xs text-gray-500">
+              User: user@webcrawler.com / user123
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
