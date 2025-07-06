@@ -91,6 +91,8 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 	crawlResult := models.CrawlResult{
 		URL:           request.URL,
 		Status:        "pending",
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
 	}
 	
 	if err := h.db.Create(&crawlResult).Error; err != nil {
@@ -99,6 +101,25 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusCreated, crawlResult)
+}
+
+// ProcessPendingCrawls triggers processing of all pending crawl results
+func (h *CrawlHandler) ProcessPendingCrawls(c *gin.Context) {
+	// For now, just return a message that crawling is not implemented
+	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented"})
+}
+
+// CrawlSingleURL processes a specific URL by ID
+func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
+	id := c.Param("id")
+	idUint, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	
+	// For now, just return a message that crawling is not implemented
+	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented", "id": idUint})
 }
 
 // GetStats returns dashboard statistics

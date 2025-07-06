@@ -75,6 +75,10 @@ export default function Dashboard() {
     }
   };
 
+  const handleUrlError = (error: string) => {
+    setError(error);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto py-10">
@@ -119,7 +123,11 @@ export default function Dashboard() {
       </div>
 
       <div className="mb-8">
-        <UrlInput onAddUrl={handleAddUrl} isLoading={isAddingUrl} />
+        <UrlInput
+          onAddUrl={handleAddUrl}
+          onError={handleUrlError}
+          isLoading={isAddingUrl}
+        />
       </div>
 
       {data.length === 0 ? (

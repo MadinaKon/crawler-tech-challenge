@@ -7,10 +7,11 @@ import React, { useState } from "react";
 
 interface UrlInputProps {
   onAddUrl: (url: string) => void;
+  onError?: (error: string) => void;
   isLoading?: boolean;
 }
 
-const UrlInput = ({ onAddUrl, isLoading = false }: UrlInputProps) => {
+const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
   const [url, setUrl] = useState("");
   const { toast } = useToast();
 
@@ -27,22 +28,26 @@ const UrlInput = ({ onAddUrl, isLoading = false }: UrlInputProps) => {
     e.preventDefault();
 
     if (!url.trim()) {
+      const errorMsg = "Please enter a valid URL to analyze.";
       toast({
         title: "URL Required",
-        description: "Please enter a valid URL to analyze.",
+        description: errorMsg,
         variant: "destructive",
       });
+      onError?.(errorMsg);
       return;
     }
 
     const formattedUrl = url.startsWith("http") ? url : `https://${url}`;
 
     if (!validateUrl(formattedUrl)) {
+      const errorMsg = "Please enter a valid URL (e.g., https://example.com)";
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid URL (e.g., https://example.com)",
+        description: errorMsg,
         variant: "destructive",
       });
+      onError?.(errorMsg);
       return;
     }
 
