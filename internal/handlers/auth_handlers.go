@@ -72,7 +72,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	// Update last login
-	h.db.Model(&user).Update("last_login", time.Now())
+	// h.db.Model(&user).Update("last_login", time.Now())
+if err := h.db.Model(&user).Update("last_login", time.Now()).Error; err != nil {
+    // Log the error but don't fail the login
+ c.Set("last_login_update_error", err)
+}
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
