@@ -58,19 +58,16 @@ func main() {
     api := r.Group("/api")
     {
         api.GET("/crawls", crawlHandler.GetCrawlResults)
+        api.POST("/crawls", crawlHandler.CreateCrawlResult)
         api.GET("/crawls/:id", crawlHandler.GetCrawlResultByID)
         api.GET("/crawls/:id/broken-links", crawlHandler.GetBrokenLinks)
+        api.POST("/crawls/process", crawlHandler.ProcessPendingCrawls)
+        api.POST("/crawls/:id/crawl", crawlHandler.CrawlSingleURL)
         api.GET("/stats", crawlHandler.GetStats)
     }
 
-    // Serve static files (React app)
-    r.Static("/static", "./dist")
-    r.LoadHTMLGlob("dist/*.html")
-    
-    // Catch-all route to serve React app
-    r.NoRoute(func(c *gin.Context) {
-        c.File("dist/index.html")
-    })
+    // Note: Frontend is served separately on port 3002
+    // Static file serving removed to avoid conflicts with API routes
 
     log.Println("Server starting on :8080")
     r.Run("0.0.0.0:8080")
