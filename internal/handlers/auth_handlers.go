@@ -187,7 +187,11 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	// Revoke old refresh token
-	h.authMiddleware.RevokeRefreshToken(req.RefreshToken, userID.(uint))
+if err := h.authMiddleware.RevokeRefreshToken(req.RefreshToken, userID.(uint)); err != nil {
+    // Log the error but continue - new tokens are already generated
+    // Old token will expire naturally
+   c.Set("old_token_revocation_error", err)
+}
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
