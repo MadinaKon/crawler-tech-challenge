@@ -2,6 +2,7 @@
 
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
+import UrlInput from "@/components/UrlInput";
 import { useEffect, useState } from "react";
 
 interface CrawlResult {
@@ -24,27 +25,55 @@ export default function Dashboard() {
   const [data, setData] = useState<CrawlResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingUrl, setIsAddingUrl] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("http://localhost:8080/api/crawls");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const jsonData = await response.json();
+      setData(jsonData);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://localhost:8080/api/crawls");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const jsonData = await response.json();
-        setData(jsonData);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const handleAddUrl = async (url: string) => {
+    setIsAddingUrl(true);
+    try {
+      // Here you would typically make a POST request to your backend
+      // to add the URL to the crawl queue
+      const response = await fetch("http://localhost:8080/api/crawls", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add URL: ${response.status}`);
+      }
+
+      // Refresh the data to show the new crawl result
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to add URL:", err);
+      setError(err instanceof Error ? err.message : "Failed to add URL");
+    } finally {
+      setIsAddingUrl(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -80,7 +109,19 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Web Crawler Dashboard</h1>
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Website Analysis Dashboard
+        </h1>
+        <p className="text-lg text-gray-600">
+          Analyze website structure, links, and performance metrics
+        </p>
+      </div>
+
+      <div className="mb-8">
+        <UrlInput onAddUrl={handleAddUrl} isLoading={isAddingUrl} />
+      </div>
+
       {data.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-gray-500 text-lg">No crawl results found.</p>

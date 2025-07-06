@@ -4,6 +4,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 	"webcrawler-backend/internal/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -73,6 +74,33 @@ func (h *CrawlHandler) GetBrokenLinks(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, brokenLinks)
+}
+
+// CreateCrawlResult creates a new crawl result
+func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
+	var request struct {
+		URL string `json:"url" binding:"required"`
+	}
+	
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "URL is required"})
+		return
+	}
+	
+	// Create a new crawl result with pending status
+	crawlResult := models.CrawlResult{
+		URL:           request.URL,
+		Status:        "pending",
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+	
+	if err := h.db.Create(&crawlResult).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusCreated, crawlResult)
 }
 
 // GetStats returns dashboard statistics
