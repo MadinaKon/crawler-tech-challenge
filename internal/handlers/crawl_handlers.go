@@ -91,8 +91,6 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 	crawlResult := models.CrawlResult{
 		URL:           request.URL,
 		Status:        "pending",
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
 	}
 	
 	if err := h.db.Create(&crawlResult).Error; err != nil {

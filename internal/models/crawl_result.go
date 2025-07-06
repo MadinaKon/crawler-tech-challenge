@@ -19,8 +19,8 @@ type CrawlResult struct {
 	InaccessibleLinks int            `json:"inaccessible_links" gorm:"default:0"`
 	HasLoginForm      bool           `json:"has_login_form" gorm:"default:false"`
 	ErrorMessage      string         `json:"error_message" gorm:"type:text"`
-	CreatedAt         time.Time      `json:"created_at"`
-	UpdatedAt         time.Time      `json:"updated_at"`
+    CreatedAt         time.Time      `json:"created_at" gorm:"autoCreateTime"`
+    UpdatedAt         time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt         gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 }
 
