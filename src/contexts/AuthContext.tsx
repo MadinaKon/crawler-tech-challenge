@@ -67,11 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await fetch("http://localhost:8081/api/auth/refresh", {
+      const response = await fetch("http://localhost:8090/api/auth/refresh", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ refresh_token: storedRefreshToken }),
       });
