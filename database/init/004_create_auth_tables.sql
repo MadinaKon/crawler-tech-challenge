@@ -1,29 +1,18 @@
--- Create users table for authentication
-CREATE TABLE users (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'user') DEFAULT 'user',
-    is_active BOOLEAN DEFAULT TRUE,
-    email_verified BOOLEAN DEFAULT FALSE,
-    last_login TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL,
-    
-    -- Indexes
-    INDEX idx_email (email),
-    INDEX idx_role (role),
-    INDEX idx_is_active (is_active),
-    INDEX idx_created_at (created_at),
-    INDEX idx_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Modify existing users table to add auth-related columns
+ALTER TABLE users 
+ADD COLUMN role ENUM('admin', 'user') DEFAULT 'user' AFTER name,
+ADD COLUMN email_verified BOOLEAN DEFAULT FALSE AFTER is_active,
+ADD COLUMN last_login TIMESTAMP NULL AFTER email_verified,
+ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at,
+ADD INDEX idx_role (role),
+ADD INDEX idx_email_verified (email_verified),
+ADD INDEX idx_last_login (last_login),
+ADD INDEX idx_deleted_at (deleted_at);
 
 -- Create refresh tokens table for JWT refresh mechanism
 CREATE TABLE refresh_tokens (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
     token_hash VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     is_revoked BOOLEAN DEFAULT FALSE,
@@ -42,7 +31,7 @@ CREATE TABLE refresh_tokens (
 -- Create API keys table for service-to-service authentication
 CREATE TABLE api_keys (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
     name VARCHAR(255) NOT NULL,
     key_hash VARCHAR(255) NOT NULL,
     permissions JSON,
@@ -64,14 +53,14 @@ CREATE TABLE api_keys (
 
 -- Add user_id to crawl_results table for user ownership
 ALTER TABLE crawl_results 
-ADD COLUMN user_id BIGINT UNSIGNED NULL,
+ADD COLUMN user_id VARCHAR(36) NULL,
 ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
 ADD INDEX idx_user_id (user_id);
 
 -- Insert default admin user (password: admin123)
-INSERT INTO users (email, password_hash, name, role, is_active, email_verified) VALUES 
-('admin@webcrawler.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin', TRUE, TRUE);
+INSERT INTO users (id, email, password_hash, name, role, is_active, email_verified) VALUES 
+('550e8400-e29b-41d4-a716-446655440001', 'admin@webcrawler.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin', TRUE, TRUE);
 
 -- Insert default test user (password: user123)
-INSERT INTO users (email, password_hash, name, role, is_active, email_verified) VALUES 
-('user@webcrawler.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Test User', 'user', TRUE, TRUE); 
+INSERT INTO users (id, email, password_hash, name, role, is_active, email_verified) VALUES 
+('550e8400-e29b-41d4-a716-446655440002', 'user@webcrawler.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Test User', 'user', TRUE, TRUE); 

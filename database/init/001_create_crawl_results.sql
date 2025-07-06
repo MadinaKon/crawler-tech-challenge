@@ -1,17 +1,13 @@
 CREATE TABLE crawl_results (
-    id VARCHAR(36) PRIMARY KEY,
-    url VARCHAR(2048) NOT NULL,
-    title VARCHAR(512),
-    html_version VARCHAR(50),
-    status ENUM('queued', 'running', 'completed', 'error') DEFAULT 'queued',
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NULL,
+    url VARCHAR(500) NOT NULL,
+    title VARCHAR(500),
+    html_version VARCHAR(10),
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
     
-    -- Heading counts
-    h1_count INT DEFAULT 0,
-    h2_count INT DEFAULT 0,
-    h3_count INT DEFAULT 0,
-    h4_count INT DEFAULT 0,
-    h5_count INT DEFAULT 0,
-    h6_count INT DEFAULT 0,
+    -- Heading counts stored as JSON
+    heading_counts JSON,
     
     -- Link counts
     internal_links INT DEFAULT 0,
@@ -25,10 +21,12 @@ CREATE TABLE crawl_results (
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    completed_at TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
     
     -- Indexes
     INDEX idx_url (url(255)),
     INDEX idx_status (status),
-    INDEX idx_created_at (created_at)
-);
+    INDEX idx_created_at (created_at),
+    INDEX idx_deleted_at (deleted_at),
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
