@@ -53,8 +53,6 @@ export default function Dashboard() {
   const handleAddUrl = async (url: string) => {
     setIsAddingUrl(true);
     try {
-      // Here you would typically make a POST request to your backend
-      // to add the URL to the crawl queue
       const response = await fetch("http://localhost:8081/api/crawls", {
         method: "POST",
         headers: {
