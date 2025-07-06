@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
+/**
+ * Card component for displaying content in a bordered container
+ */
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -11,6 +14,7 @@ const Card = React.forwardRef<
       "rounded-lg border bg-card text-card-foreground shadow-sm",
       className
     )}
+    role="region"
     {...props}
   />
 ));
@@ -29,7 +33,7 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
