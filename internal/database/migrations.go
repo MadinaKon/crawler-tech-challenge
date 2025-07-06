@@ -31,15 +31,17 @@ func RunMigrations(db *gorm.DB) error {
 
 	// Auto migrate all models
 	err := db.AutoMigrate(
+		&models.User{},
+		&models.RefreshToken{},
+		&models.APIKey{},
 		&models.CrawlResult{},
 		&models.BrokenLink{},
 	)
-	
 	if err != nil {
 		return err
 	}
 
-	log.Println("Database migrations completed successfully")
+	log.Println("Database migrations completed successfully!")
 	return nil
 }
 

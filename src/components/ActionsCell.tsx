@@ -22,7 +22,9 @@ export function ActionsCell({ row }: { row: any }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigate(`/url/${row.original.id}`)}>
+        <DropdownMenuItem
+          onClick={() => navigate(`/detail/${row.original.id}`)}
+        >
           View Details
         </DropdownMenuItem>
         <DropdownMenuItem

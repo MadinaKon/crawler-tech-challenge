@@ -4,20 +4,21 @@ import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 import UrlInput from "@/components/UrlInput";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/services/api";
 import { useEffect, useState } from "react";
 
 interface CrawlResult {
   id: number;
   url: string;
   title: string;
-  html_version: string;
   status: "pending" | "completed" | "failed";
-  heading_counts: any;
+  html_version: string;
+  heading_counts: Record<string, number>;
   internal_links: number;
   external_links: number;
   inaccessible_links: number;
   has_login_form: boolean;
-  error_message: string;
+  error_message?: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,16 +32,27 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://localhost:8081/api/crawls");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      setLoading(true);
+      const response = await apiService.getCrawls();
+
+      // Handle both old and new API response formats
+      if (Array.isArray(response)) {
+        // Old format: just an array
+        setData(response);
+      } else if (response.data && Array.isArray(response.data)) {
+        // New format: object with data, pagination, filters
+        setData(response.data);
+      } else {
+        // Fallback: empty data
+        setData([]);
       }
-      const jsonData = await response.json();
-      setData(jsonData);
+
       setError(null);
     } catch (err) {
       console.error("Failed to fetch data:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch data");
+      // Set empty data on error to prevent undefined errors
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -53,63 +65,29 @@ export default function Dashboard() {
   const handleAddUrl = async (url: string) => {
     setIsAddingUrl(true);
     try {
-      const response = await fetch("http://localhost:8081/api/crawls", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to add URL: ${response.status}`);
-      }
-
-      // Refresh the data to show the new crawl result
-      await fetchData();
+      await apiService.createCrawl(url);
       toast({
-        title: "URL Added",
-        description: "URL has been queued for analysis.",
+        title: "URL added successfully",
+        description: "The URL has been added to the crawl queue.",
       });
-    } catch (err) {
-      console.error("Failed to add URL:", err);
-      setError(err instanceof Error ? err.message : "Failed to add URL");
+      fetchData(); // Refresh the data
+    } catch (error) {
+      toast({
+        title: "Failed to add URL",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsAddingUrl(false);
     }
-  };
-
-  const handleUrlError = (error: string) => {
-    setError(error);
   };
 
   if (loading) {
     return (
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading crawl results...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-red-800 text-lg font-semibold mb-2">
-            Error Loading Data
-          </h2>
-          <p className="text-red-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
       </div>
     );
@@ -117,28 +95,28 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Website Analysis Dashboard
-        </h1>
-        <p className="text-lg text-gray-600">
-          Analyze website structure, links, and performance metrics
-        </p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Web Crawler Dashboard</h1>
+        <p className="text-gray-600">Monitor and manage your website crawls</p>
       </div>
 
       <div className="mb-8">
-        <UrlInput
-          onAddUrl={handleAddUrl}
-          onError={handleUrlError}
-          isLoading={isAddingUrl}
-        />
+        <UrlInput onAddUrl={handleAddUrl} isLoading={isAddingUrl} />
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
       {data.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500 text-lg">No crawl results found.</p>
-          <p className="text-gray-400">
-            Start crawling some URLs to see results here.
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No crawl results yet
+          </h3>
+          <p className="text-gray-600">
+            Add a URL above to start crawling websites
           </p>
         </div>
       ) : (

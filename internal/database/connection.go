@@ -1,50 +1,71 @@
 package database
 
 import (
-    "fmt"
-    "log"
-    "os"
-    "time"
-    
-    "gorm.io/driver/mysql"
-    "gorm.io/gorm"
-    "gorm.io/gorm/logger"
+	"fmt"
+	"log"
+	"os"
+	"time"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func Connect() (*gorm.DB, error) {
-    host := os.Getenv("DB_HOST")
-    port := os.Getenv("DB_PORT")
-    user := os.Getenv("DB_USER")
-    password := os.Getenv("DB_PASS")
-    dbname := os.Getenv("DB_NAME")
-    
+// InitDB initializes and returns a database connection
+func InitDB() (*gorm.DB, error) {
+	// Get database configuration from environment variables
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "3306")
+	dbUser := getEnv("DB_USER", "root")
+	dbPassword := getEnv("DB_PASSWORD", "password")
+	dbName := getEnv("DB_NAME", "webcrawler_db")
 
-    if host == "" || port == "" || user == "" || password == "" || dbname == "" {
-        return nil, fmt.Errorf("missing required database environment variables")
-    }
-    
-    dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-        user, password, host, port, dbname)
-    
-    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-        Logger: logger.Default.LogMode(logger.Info),
-    })
-    
-    if err != nil {
-        return nil, fmt.Errorf("failed to connect to database: %w", err)
-    }
-    
-    // Configure connection pooling
-    sqlDB, err := db.DB()
-    if err != nil {
-        return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
-    }
-    
-    // Set connection pool settings
-    sqlDB.SetMaxIdleConns(10)           // Maximum number of idle connections
-    sqlDB.SetMaxOpenConns(100)          // Maximum number of open connections
-    sqlDB.SetConnMaxLifetime(time.Hour) // Maximum lifetime of a connection
-    
-    log.Println("Database connected successfully with connection pooling configured")
-    return db, nil
+	// Create DSN (Data Source Name)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	// Configure GORM logger
+	gormLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
+
+	// Open database connection
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	// Get underlying sql.DB object
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %v", err)
+	}
+
+	// Configure connection pool
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// Test connection
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %v", err)
+	}
+
+	log.Println("Successfully connected to MySQL database!")
+	return db, nil
+}
+
+// getEnv gets an environment variable or returns a default value
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }
