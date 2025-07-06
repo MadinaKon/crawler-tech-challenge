@@ -1,4 +1,3 @@
-
 package handlers
 
 import (
@@ -22,33 +21,146 @@ func NewCrawlHandler(db *gorm.DB) *CrawlHandler {
 	return &CrawlHandler{db: db}
 }
 
-// GetCrawlResults returns all crawl results
+// GetCrawlResults returns all crawl results with enhanced filtering
 func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 	var results []models.CrawlResult
 	
 	// Get query parameters for filtering
 	status := c.Query("status")
+	url := c.Query("url")
+	title := c.Query("title")
+	hasLoginForm := c.Query("has_login_form")
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
 	limit := c.DefaultQuery("limit", "50")
 	offset := c.DefaultQuery("offset", "0")
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
 	
 	query := h.db.Model(&models.CrawlResult{})
+	
+	// Apply user ownership filter (users can only see their own crawls unless admin)
+	userRole, exists := c.Get("user_role")
+	if exists && userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		query = query.Where("user_id = ?", userID)
+	}
 	
 	// Apply status filter if provided
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
 	
+	// Apply URL filter (partial match)
+	if url != "" {
+		query = query.Where("url LIKE ?", "%"+url+"%")
+	}
+	
+	// Apply title filter (partial match)
+	if title != "" {
+		query = query.Where("title LIKE ?", "%"+title+"%")
+	}
+	
+	// Apply login form filter
+	if hasLoginForm != "" {
+		hasLogin := hasLoginForm == "true"
+		query = query.Where("has_login_form = ?", hasLogin)
+	}
+	
+	// Apply date range filters
+	if dateFrom != "" {
+		query = query.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		query = query.Where("created_at <= ?", dateTo)
+	}
+	
+	// Apply sorting
+	sortDirection := "DESC"
+	if sortOrder == "asc" {
+		sortDirection = "ASC"
+	}
+	
+	// Validate sort_by field to prevent SQL injection
+	allowedSortFields := map[string]bool{
+		"created_at": true,
+		"updated_at": true,
+		"url":        true,
+		"title":      true,
+		"status":     true,
+	}
+	
+	if !allowedSortFields[sortBy] {
+		sortBy = "created_at"
+	}
+	
+	query = query.Order(sortBy + " " + sortDirection)
+	
 	// Apply pagination
 	limitInt, _ := strconv.Atoi(limit)
 	offsetInt, _ := strconv.Atoi(offset)
 	
-	result := query.Order("created_at DESC").Limit(limitInt).Offset(offsetInt).Find(&results)
+	// Limit maximum results to prevent performance issues
+	if limitInt > 100 {
+		limitInt = 100
+	}
+	
+	result := query.Limit(limitInt).Offset(offsetInt).Find(&results)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 	
-	c.JSON(http.StatusOK, results)
+	// Get total count for pagination
+	var totalCount int64
+	countQuery := h.db.Model(&models.CrawlResult{})
+	
+	// Apply same filters to count query
+	if exists && userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		countQuery = countQuery.Where("user_id = ?", userID)
+	}
+	if status != "" {
+		countQuery = countQuery.Where("status = ?", status)
+	}
+	if url != "" {
+		countQuery = countQuery.Where("url LIKE ?", "%"+url+"%")
+	}
+	if title != "" {
+		countQuery = countQuery.Where("title LIKE ?", "%"+title+"%")
+	}
+	if hasLoginForm != "" {
+		hasLogin := hasLoginForm == "true"
+		countQuery = countQuery.Where("has_login_form = ?", hasLogin)
+	}
+	if dateFrom != "" {
+		countQuery = countQuery.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		countQuery = countQuery.Where("created_at <= ?", dateTo)
+	}
+	
+	countQuery.Count(&totalCount)
+	
+	c.JSON(http.StatusOK, gin.H{
+		"data": results,
+		"pagination": gin.H{
+			"total":   totalCount,
+			"limit":   limitInt,
+			"offset":  offsetInt,
+			"has_more": offsetInt+limitInt < int(totalCount),
+		},
+		"filters": gin.H{
+			"status":        status,
+			"url":           url,
+			"title":         title,
+			"has_login_form": hasLoginForm,
+			"date_from":     dateFrom,
+			"date_to":       dateTo,
+			"sort_by":       sortBy,
+			"sort_order":    sortOrder,
+		},
+	})
 }
 
 // GetCrawlResultByID returns a specific crawl result with its broken links
@@ -96,11 +208,18 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 		return
 	}
 	
-	// Check for duplicate URL
+	// Get user ID from context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+	
+	// Check for duplicate URL for this user
 	var existingCrawl models.CrawlResult
-	if err := h.db.Where("url = ?", normalizedURL).First(&existingCrawl).Error; err == nil {
+	if err := h.db.Where("url = ? AND user_id = ?", normalizedURL, userID).First(&existingCrawl).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{
-			"error": "URL already exists in crawl queue",
+			"error": "URL already exists in crawl queue for this user",
 			"existing_id": existingCrawl.ID,
 			"existing_status": existingCrawl.Status,
 		})
@@ -112,9 +231,11 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 	}
 	
 	// Create a new crawl result with pending status
+	userIDUint := userID.(uint)
 	crawlResult := models.CrawlResult{
 		URL:           normalizedURL,
 		Status:        "pending",
+		UserID:        &userIDUint,
 	}
 	
 	if err := h.db.Create(&crawlResult).Error; err != nil {

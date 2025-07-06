@@ -9,6 +9,8 @@ import (
 // CrawlResult represents a single crawl result
 type CrawlResult struct {
 	ID                uint           `json:"id" gorm:"primaryKey"`
+	UserID            *uint          `json:"user_id" gorm:"index"` // Nullable for backward compatibility
+	User              *User          `json:"user,omitempty" gorm:"foreignKey:UserID"`
 	URL               string         `json:"url" gorm:"type:varchar(500);not null;index:idx_url,length:255"` // Reduced length for index compatibility
 	Title             string         `json:"title" gorm:"type:varchar(500)"`
 	HTMLVersion       string         `json:"html_version" gorm:"type:varchar(10)"`
@@ -22,6 +24,9 @@ type CrawlResult struct {
     CreatedAt         time.Time      `json:"created_at" gorm:"autoCreateTime"`
     UpdatedAt         time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt         gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+	
+	// Relationships
+	BrokenLinks []BrokenLink `json:"broken_links,omitempty" gorm:"foreignKey:CrawlResultID"`
 }
 
 // JSON is a custom type for JSON fields

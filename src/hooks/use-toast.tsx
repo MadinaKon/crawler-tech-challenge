@@ -1,0 +1,89 @@
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+interface ToastOptions {
+  title: string;
+  description?: string;
+  variant?: "default" | "destructive";
+  id?: number;
+}
+
+interface ToastContextType {
+  toast: (options: ToastOptions) => void;
+  toasts: ToastOptions[];
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+};
+
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [toasts, setToasts] = useState<ToastOptions[]>([]);
+
+  const toast = (options: ToastOptions) => {
+    const newToast = { ...options, id: Date.now() };
+    setToasts((prev) => [...prev, newToast]);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
+    }, 5000);
+  };
+
+  return (
+    <ToastContext.Provider value={{ toast, toasts }}>
+      {children}
+    </ToastContext.Provider>
+  );
+};
+
+export const Toaster: React.FC = () => {
+  const { toasts } = useToast();
+
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-2">
+      {toasts.map((toast) => (
+        <Toast key={toast.id} {...toast} />
+      ))}
+    </div>
+  );
+};
+
+const Toast: React.FC<ToastOptions> = ({
+  title,
+  description,
+  variant = "default",
+}) => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!isVisible) return null;
+
+  const baseClasses =
+    "p-4 rounded-lg shadow-lg max-w-sm transition-all duration-300";
+  const variantClasses = {
+    default: "bg-white border border-gray-200 text-gray-900",
+    destructive: "bg-red-50 border border-red-200 text-red-900",
+  };
+
+  return (
+    <div className={`${baseClasses} ${variantClasses[variant]}`}>
+      <div className="font-medium">{title}</div>
+      {description && <div className="text-sm mt-1">{description}</div>}
+    </div>
+  );
+};
