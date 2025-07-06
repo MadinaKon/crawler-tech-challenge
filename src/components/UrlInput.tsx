@@ -38,7 +38,8 @@ const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
       return;
     }
 
-    const formattedUrl = url.startsWith("http") ? url : `https://${url}`;
+
+    const formattedUrl = url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) ? url : `https://${url}`;
 
     if (!validateUrl(formattedUrl)) {
       const errorMsg = "Please enter a valid URL (e.g., https://example.com)";
