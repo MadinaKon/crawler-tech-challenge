@@ -31,7 +31,7 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/crawls");
+      const response = await fetch("http://localhost:8081/api/crawls");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -55,7 +55,7 @@ export default function Dashboard() {
     try {
       // Here you would typically make a POST request to your backend
       // to add the URL to the crawl queue
-      const response = await fetch("http://localhost:8080/api/crawls", {
+      const response = await fetch("http://localhost:8081/api/crawls", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
