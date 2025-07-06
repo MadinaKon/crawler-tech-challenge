@@ -53,10 +53,6 @@ const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
 
     onAddUrl(formattedUrl);
     setUrl("");
-    toast({
-      title: "URL Added",
-      description: "URL has been queued for analysis.",
-    });
   };
 
   return (

@@ -3,6 +3,7 @@
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 import UrlInput from "@/components/UrlInput";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 
 interface CrawlResult {
@@ -26,6 +27,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
+  const { toast } = useToast();
 
   const fetchData = async () => {
     try {
@@ -67,6 +69,10 @@ export default function Dashboard() {
 
       // Refresh the data to show the new crawl result
       await fetchData();
+      toast({
+        title: "URL Added",
+        description: "URL has been queued for analysis.",
+      });
     } catch (err) {
       console.error("Failed to add URL:", err);
       setError(err instanceof Error ? err.message : "Failed to add URL");

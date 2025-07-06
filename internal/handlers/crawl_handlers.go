@@ -2,8 +2,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 	"webcrawler-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -87,9 +90,31 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 		return
 	}
 	
+	// Normalize and validate URL
+	normalizedURL, err := h.normalizeAndValidateURL(request.URL)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid URL: %v", err)})
+		return
+	}
+	
+	// Check for duplicate URL
+	var existingCrawl models.CrawlResult
+	if err := h.db.Where("url = ?", normalizedURL).First(&existingCrawl).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "URL already exists in crawl queue",
+			"existing_id": existingCrawl.ID,
+			"existing_status": existingCrawl.Status,
+		})
+		return
+	} else if err != gorm.ErrRecordNotFound {
+		// Database error occurred
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error while checking for duplicates"})
+		return
+	}
+	
 	// Create a new crawl result with pending status
 	crawlResult := models.CrawlResult{
-		URL:           request.URL,
+		URL:           normalizedURL,
 		Status:        "pending",
 		CreatedAt:     time.Now(),
 		UpdatedAt:     time.Now(),
@@ -101,6 +126,45 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusCreated, crawlResult)
+}
+
+// normalizeAndValidateURL validates and normalizes the URL format
+func (h *CrawlHandler) normalizeAndValidateURL(inputURL string) (string, error) {
+	// Trim whitespace
+	urlStr := strings.TrimSpace(inputURL)
+	
+	// Add scheme if missing
+	if !strings.HasPrefix(urlStr, "http://") && !strings.HasPrefix(urlStr, "https://") {
+		urlStr = "https://" + urlStr
+	}
+	
+	// Parse URL to validate format
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL format: %v", err)
+	}
+	
+	// Validate required URL components
+	if parsedURL.Scheme == "" {
+		return "", fmt.Errorf("URL scheme is required")
+	}
+	
+	if parsedURL.Host == "" {
+		return "", fmt.Errorf("URL host is required")
+	}
+	
+	// Only allow HTTP and HTTPS schemes
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return "", fmt.Errorf("only HTTP and HTTPS schemes are supported")
+	}
+	
+	// Normalize the URL (remove default ports, etc.)
+	normalizedURL := parsedURL.String()
+	
+	// Remove trailing slash for consistency
+	normalizedURL = strings.TrimSuffix(normalizedURL, "/")
+	
+	return normalizedURL, nil
 }
 
 // ProcessPendingCrawls triggers processing of all pending crawl results
