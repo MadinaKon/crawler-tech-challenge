@@ -24,6 +24,9 @@ func NewCrawlHandler(db *gorm.DB) *CrawlHandler {
 // GetCrawlResults returns all crawl results with enhanced filtering
 func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 	var results []models.CrawlResult
+
+	h.db.Find(&results)
+    c.JSON(http.StatusOK, gin.H{"data": results})
 	
 	// Get query parameters for filtering
 	status := c.Query("status")

@@ -61,6 +61,11 @@ export default function Dashboard() {
     fetchCrawls();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(fetchCrawls, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleAddUrl = async (url: string) => {
     setIsAddingUrl(true);
     try {

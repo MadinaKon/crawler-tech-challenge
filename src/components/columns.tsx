@@ -50,9 +50,25 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "status",
     header: "Status",
+    // cell: ({ row }) => {
+    //   const status = row.getValue("status") as CrawlStatus;
+    //   return <StatusBadge status={status} />;
+    // },
     cell: ({ row }) => {
       const status = row.getValue("status") as CrawlStatus;
-      return <StatusBadge status={status} />;
+      const progress = row.getValue("progress");
+      return (
+        <div>
+          <StatusBadge status={status} />
+          {status === "running" && typeof progress === "number" && (
+            <progress
+              value={progress}
+              max={100}
+              className="ml-2 align-middle"
+            />
+          )}
+        </div>
+      );
     },
   },
   {
