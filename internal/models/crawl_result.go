@@ -26,7 +26,7 @@ type CrawlResult struct {
 	URL               string         `json:"url" gorm:"type:varchar(500);not null;index:idx_url,length:255"` // Reduced length for index compatibility
 	Title             string         `json:"title" gorm:"type:varchar(500)"`
 	HTMLVersion       string         `json:"html_version" gorm:"type:varchar(10)"`
-	Status            CrawlStatus    `json:"status"`
+	Status            CrawlStatus    `json:"status" gorm:"type:enum('queued','running','done','error');default:'queued'"`
 	Progress          int            `json:"progress"` // 0-100
 	HeadingCounts     JSON           `json:"heading_counts" gorm:"type:json"` // Store as JSON: {"h1": 2, "h2": 5, ...}
 	InternalLinks     int            `json:"internal_links" gorm:"default:0"`

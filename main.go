@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"runtime"
+	"fmt"
 	"webcrawler-backend/internal/database"
 	"webcrawler-backend/internal/handlers"
 	"webcrawler-backend/internal/middleware"
@@ -10,28 +12,40 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// logWithLevel logs with a level and context (file, line, function)
+func logWithLevel(level string, msg string, args ...interface{}) {
+	pc, file, line, ok := runtime.Caller(1)
+	funcName := "?"
+	if ok {
+		funcName = runtime.FuncForPC(pc).Name()
+	}
+	log.Printf("[%s] (%s:%d %s) %s", level, file, line, funcName, fmt.Sprintf(msg, args...))
+}
+
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+		logWithLevel("INFO", "No .env file found, using system environment variables")
 	}
 
 	// Get JWT secret from environment
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		jwtSecret = "your-super-secret-jwt-key-change-in-production" // Default for development
-		log.Println("Warning: Using default JWT secret. Set JWT_SECRET environment variable for production.")
+		logWithLevel("WARN", "Using default JWT secret. Set JWT_SECRET environment variable for production.")
 	}
 
 	// Initialize database
 	db, err := database.InitDB()
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		logWithLevel("ERROR", "Failed to connect to database: %v", err)
+		os.Exit(1)
 	}
 
 	// Run migrations
 	if err := database.RunMigrations(db); err != nil {
-		log.Fatal("Failed to run migrations:", err)
+		logWithLevel("ERROR", "Failed to run migrations: %v", err)
+		os.Exit(1)
 	}
 
 	// Initialize handlers
@@ -108,8 +122,9 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Server starting on port %s", port)
+	logWithLevel("INFO", "Server starting on port %s", port)
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("Failed to start server:", err)
+		logWithLevel("ERROR", "Failed to start server: %v", err)
+		os.Exit(1)
 	}
 }
