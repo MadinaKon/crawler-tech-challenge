@@ -10,8 +10,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 
+interface User {
+  name: string;
+  email: string;
+  id: number;
+}
+
 interface LoginFormProps {
-  onLoginSuccess: (token: string, user: any) => void;
+  onLoginSuccess: (token: string, user: User) => void;
   onSwitchToRegister: () => void;
 }
 
@@ -68,7 +74,7 @@ export default function LoginForm({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto" data-testid="login-card">
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>
@@ -76,7 +82,11 @@ export default function LoginForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          data-testid="login-form"
+        >
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
@@ -88,6 +98,7 @@ export default function LoginForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              data-testid="login-email"
             />
           </div>
           <div className="space-y-2">
@@ -101,9 +112,15 @@ export default function LoginForm({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              data-testid="login-password"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            data-testid="login-submit"
+          >
             {isLoading ? "Logging in..." : "Login"}
           </Button>
         </form>
@@ -112,6 +129,7 @@ export default function LoginForm({
             type="button"
             onClick={onSwitchToRegister}
             className="text-sm text-blue-600 hover:text-blue-800"
+            data-testid="login-switch-register"
           >
             Don't have an account? Register
           </button>

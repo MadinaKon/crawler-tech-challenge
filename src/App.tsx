@@ -12,22 +12,28 @@ import {
   Routes,
 } from "react-router-dom";
 
+interface User {
+  name: string;
+  email: string;
+  id: number;
+}
+
 function AppContent() {
   const { isAuthenticated, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(true);
 
-  const handleLoginSuccess = (token: string, user: any) => {
+  const handleLoginSuccess = (token: string, user: User) => {
     login(token, user);
   };
 
-  const handleRegisterSuccess = (token: string, user: any) => {
+  const handleRegisterSuccess = (token: string, user: User) => {
     login(token, user);
   };
 
   const handleLogout = async () => {
     try {
       // Call logout API
-      const response = await fetch("http://localhost:8090/api/auth/logout", {
+      await fetch("http://localhost:8090/api/auth/logout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

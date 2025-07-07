@@ -10,8 +10,14 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState } from "react";
 
+interface User {
+  name: string;
+  email: string;
+  id: number;
+}
+
 interface RegisterFormProps {
-  onRegisterSuccess: (token: string, user: any) => void;
+  onRegisterSuccess: (token: string, user: User) => void;
   onSwitchToLogin: () => void;
 }
 
@@ -91,7 +97,7 @@ export default function RegisterForm({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto" data-testid="register-card">
       <CardHeader>
         <CardTitle>Register</CardTitle>
         <CardDescription>
@@ -99,7 +105,11 @@ export default function RegisterForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          data-testid="register-form"
+        >
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">
               Full Name
@@ -111,6 +121,7 @@ export default function RegisterForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              data-testid="register-name"
             />
           </div>
           <div className="space-y-2">
@@ -124,6 +135,7 @@ export default function RegisterForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              data-testid="register-email"
             />
           </div>
           <div className="space-y-2">
@@ -137,6 +149,7 @@ export default function RegisterForm({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              data-testid="register-password"
             />
           </div>
           <div className="space-y-2">
@@ -150,9 +163,15 @@ export default function RegisterForm({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              data-testid="register-confirm-password"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            data-testid="register-submit"
+          >
             {isLoading ? "Creating account..." : "Register"}
           </Button>
         </form>
@@ -161,6 +180,7 @@ export default function RegisterForm({
             type="button"
             onClick={onSwitchToLogin}
             className="text-sm text-blue-600 hover:text-blue-800"
+            data-testid="register-switch-login"
           >
             Already have an account? Login
           </button>

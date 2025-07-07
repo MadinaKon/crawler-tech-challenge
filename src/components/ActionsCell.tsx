@@ -8,7 +8,15 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export function ActionsCell({ row }: { row: any }) {
+interface CrawlRow {
+  original: {
+    id: number;
+    url: string;
+    status: string;
+  };
+}
+
+export function ActionsCell({ row }: { row: CrawlRow }) {
   const navigate = useNavigate();
   return (
     <DropdownMenu>
@@ -24,16 +32,19 @@ export function ActionsCell({ row }: { row: any }) {
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           onClick={() => navigate(`/detail/${row.original.id}`)}
+          data-testid="actions-view-details"
         >
           View Details
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => console.log("re-run", row.original.id)}
+          data-testid="actions-re-run"
         >
           Re-run Analysis
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => console.log("delete", row.original.id)}
+          data-testid="actions-delete"
         >
           Delete
         </DropdownMenuItem>
