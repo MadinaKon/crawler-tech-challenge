@@ -6,6 +6,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// CrawlStatus type and constants
+// Only allow: queued, running, done, error
+//
+type CrawlStatus string
+
+const (
+	StatusQueued  CrawlStatus = "queued"
+	StatusRunning CrawlStatus = "running"
+	StatusDone    CrawlStatus = "done"
+	StatusError   CrawlStatus = "error"
+)
+
 // CrawlResult represents a single crawl result
 type CrawlResult struct {
 	ID                uint           `json:"id" gorm:"primaryKey"`
@@ -14,7 +26,7 @@ type CrawlResult struct {
 	URL               string         `json:"url" gorm:"type:varchar(500);not null;index:idx_url,length:255"` // Reduced length for index compatibility
 	Title             string         `json:"title" gorm:"type:varchar(500)"`
 	HTMLVersion       string         `json:"html_version" gorm:"type:varchar(10)"`
-	Status            string         `json:"status" gorm:"type:varchar(50);not null;default:'pending';index:idx_status"` // pending, completed, failed
+	Status            CrawlStatus    `json:"status" gorm:"type:varchar(50);not null;default:'queued';index:idx_status"`
 	HeadingCounts     JSON           `json:"heading_counts" gorm:"type:json"` // Store as JSON: {"h1": 2, "h2": 5, ...}
 	InternalLinks     int            `json:"internal_links" gorm:"default:0"`
 	ExternalLinks     int            `json:"external_links" gorm:"default:0"`

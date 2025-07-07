@@ -22,12 +22,14 @@ function AppContent() {
   const { isAuthenticated, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(true);
 
-  const handleLoginSuccess = (token: string, user: User) => {
-    login(token, user);
+  const handleLoginSuccess = (token: string, user: any) => {
+    const userWithRole = { ...user, role: user.role || "user" };
+    login(token, userWithRole);
   };
 
-  const handleRegisterSuccess = (token: string, user: User) => {
-    login(token, user);
+  const handleRegisterSuccess = (token: string, user: any) => {
+    const userWithRole = { ...user, role: user.role || "user" };
+    login(token, userWithRole);
   };
 
   const handleLogout = async () => {

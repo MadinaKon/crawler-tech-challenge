@@ -230,11 +230,11 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 		return
 	}
 	
-	// Create a new crawl result with pending status
+	// Create a new crawl result with queued status
 	userIDUint := userID.(uint)
 	crawlResult := models.CrawlResult{
 		URL:           normalizedURL,
-		Status:        "pending",
+		Status:        models.StatusQueued,
 		UserID:        &userIDUint,
 	}
 	
@@ -308,17 +308,19 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 func (h *CrawlHandler) GetStats(c *gin.Context) {
 	var stats struct {
 		TotalCrawls     int64 `json:"total_crawls"`
-		CompletedCrawls int64 `json:"completed_crawls"`
-		FailedCrawls    int64 `json:"failed_crawls"`
-		PendingCrawls   int64 `json:"pending_crawls"`
+		DoneCrawls      int64 `json:"done_crawls"`
+		ErrorCrawls     int64 `json:"error_crawls"`
+		QueuedCrawls    int64 `json:"queued_crawls"`
+		RunningCrawls   int64 `json:"running_crawls"`
 		TotalBrokenLinks int64 `json:"total_broken_links"`
 	}
 	
 	// Count by status
 	h.db.Model(&models.CrawlResult{}).Count(&stats.TotalCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "completed").Count(&stats.CompletedCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "failed").Count(&stats.FailedCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "pending").Count(&stats.PendingCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusDone).Count(&stats.DoneCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusError).Count(&stats.ErrorCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusQueued).Count(&stats.QueuedCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusRunning).Count(&stats.RunningCrawls)
 	h.db.Model(&models.BrokenLink{}).Count(&stats.TotalBrokenLinks)
 	
 	c.JSON(http.StatusOK, stats)

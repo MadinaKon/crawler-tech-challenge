@@ -56,7 +56,7 @@ func CreateTables(db *gorm.DB) error {
 			url VARCHAR(500) NOT NULL,
 			title VARCHAR(500),
 			html_version VARCHAR(10),
-			status VARCHAR(50) NOT NULL DEFAULT 'pending',
+			status VARCHAR(50) NOT NULL DEFAULT 'queued',
 			heading_counts JSON,
 			internal_links INT DEFAULT 0,
 			external_links INT DEFAULT 0,
