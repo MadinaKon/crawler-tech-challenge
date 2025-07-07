@@ -1,3 +1,5 @@
+import { CrawlResult } from "@/types/crawl";
+
 interface AuthResponse {
   access_token: string;
   refresh_token: string;
@@ -6,22 +8,6 @@ interface AuthResponse {
     name: string;
     email: string;
   };
-}
-
-interface CrawlResult {
-  id: number;
-  url: string;
-  title: string;
-  status: string;
-  html_version: string;
-  heading_counts: Record<string, number>;
-  internal_links: number;
-  external_links: number;
-  inaccessible_links: number;
-  has_login_form: boolean;
-  created_at: string;
-  updated_at: string;
-  error_message?: string;
 }
 
 interface BrokenLink {
@@ -242,6 +228,18 @@ class ApiService {
         body: JSON.stringify({ name }),
       }
     );
+  }
+
+  async startCrawl(id: number): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>(`/crawls/${id}/start`, {
+      method: "POST",
+    });
+  }
+
+  async stopCrawl(id: number): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>(`/crawls/${id}/stop`, {
+      method: "POST",
+    });
   }
 }
 
