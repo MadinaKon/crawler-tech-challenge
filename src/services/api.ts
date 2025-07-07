@@ -34,7 +34,7 @@ interface BrokenLink {
 }
 
 class ApiService {
-  private baseURL = "http://localhost:8090/api";
+  private baseURL = "http://localhost:8080/api";
 
   private async makeRequest<T = unknown>(
     endpoint: string,
