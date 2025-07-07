@@ -6,6 +6,8 @@ import UrlInput from "@/components/UrlInput";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface CrawlResult {
   id: number;
@@ -29,6 +31,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
   const { toast } = useToast();
+  const [url, setUrl] = useState("");
 
   const fetchData = async () => {
     try {
@@ -112,7 +115,7 @@ export default function Dashboard() {
 
       {data.length === 0 ? (
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-gray-900 mb-2" data-testid="dashboard-empty-state">
             No crawl results yet
           </h3>
           <p className="text-gray-600">

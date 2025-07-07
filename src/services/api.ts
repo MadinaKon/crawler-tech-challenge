@@ -1,23 +1,58 @@
+interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+interface CrawlResult {
+  id: number;
+  url: string;
+  title: string;
+  status: string;
+  html_version: string;
+  heading_counts: Record<string, number>;
+  internal_links: number;
+  external_links: number;
+  inaccessible_links: number;
+  has_login_form: boolean;
+  created_at: string;
+  updated_at: string;
+  error_message?: string;
+}
+
+interface BrokenLink {
+  id: number;
+  crawl_id: number;
+  url: string;
+  status_code: number;
+  error_message: string;
+  created_at: string;
+}
+
 class ApiService {
   private baseURL = "http://localhost:8090/api";
 
-  private async makeRequest(
+  private async makeRequest<T = unknown>(
     endpoint: string,
     options: RequestInit = {},
     requireAuth = true
-  ): Promise<any> {
+  ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     // Add auth header if required
     if (requireAuth) {
       const token = localStorage.getItem("access_token");
       if (token) {
-        headers.Authorization = `Bearer ${token}`;
+        (headers as Record<string, string>).Authorization = `Bearer ${token}`;
       }
     }
 
@@ -36,23 +71,25 @@ class ApiService {
           // Retry the request with new token
           const newToken = localStorage.getItem("access_token");
           if (newToken) {
-            headers.Authorization = `Bearer ${newToken}`;
+            (
+              headers as Record<string, string>
+            ).Authorization = `Bearer ${newToken}`;
             const retryResponse = await fetch(url, { ...config, headers });
-            return this.handleResponse(retryResponse);
+            return this.handleResponse<T>(retryResponse);
           }
         }
         // If refresh failed, throw error
         throw new Error("Authentication failed");
       }
 
-      return this.handleResponse(response);
+      return this.handleResponse<T>(response);
     } catch (error) {
       console.error("API request failed:", error);
       throw error;
     }
   }
 
-  private async handleResponse(response: Response): Promise<any> {
+  private async handleResponse<T = unknown>(response: Response): Promise<T> {
     const contentType = response.headers.get("content-type");
 
     if (contentType && contentType.includes("application/json")) {
@@ -69,7 +106,7 @@ class ApiService {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    return response.text();
+    return response.text() as T;
   }
 
   private async refreshToken(): Promise<boolean> {
@@ -102,8 +139,8 @@ class ApiService {
   }
 
   // Auth endpoints
-  async login(email: string, password: string) {
-    return this.makeRequest(
+  async login(email: string, password: string): Promise<AuthResponse> {
+    return this.makeRequest<AuthResponse>(
       "/auth/login",
       {
         method: "POST",
@@ -113,8 +150,12 @@ class ApiService {
     );
   }
 
-  async register(name: string, email: string, password: string) {
-    return this.makeRequest(
+  async register(
+    name: string,
+    email: string,
+    password: string
+  ): Promise<AuthResponse> {
+    return this.makeRequest<AuthResponse>(
       "/auth/register",
       {
         method: "POST",
@@ -124,7 +165,7 @@ class ApiService {
     );
   }
 
-  async logout() {
+  async logout(): Promise<void> {
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
       try {
@@ -139,53 +180,68 @@ class ApiService {
   }
 
   // Crawl endpoints
-  async getCrawls(params?: Record<string, string>) {
+  async getCrawls(params?: Record<string, string>): Promise<CrawlResult[]> {
     const queryString = params ? new URLSearchParams(params).toString() : "";
     const endpoint = queryString ? `/crawls?${queryString}` : "/crawls";
-    return this.makeRequest(endpoint);
+    return this.makeRequest<CrawlResult[]>(endpoint);
   }
 
-  async createCrawl(url: string) {
-    return this.makeRequest("/crawls", {
+  async createCrawl(url: string): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>("/crawls", {
       method: "POST",
       body: JSON.stringify({ url }),
     });
   }
 
-  async getCrawlById(id: string) {
-    return this.makeRequest(`/crawls/${id}`);
+  async getCrawlById(id: string): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>(`/crawls/${id}`);
   }
 
-  async getBrokenLinks(crawlId: string) {
-    return this.makeRequest(`/crawls/${crawlId}/broken-links`);
+  async getBrokenLinks(crawlId: string): Promise<BrokenLink[]> {
+    return this.makeRequest<BrokenLink[]>(`/crawls/${crawlId}/broken-links`);
   }
 
-  async processCrawl(crawlId: string) {
-    return this.makeRequest(`/crawls/${crawlId}/process`, {
+  async processCrawl(crawlId: string): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>(`/crawls/${crawlId}/process`, {
       method: "POST",
     });
   }
 
-  async processAllCrawls() {
-    return this.makeRequest("/crawls/process-all", {
+  async processAllCrawls(): Promise<{ message: string }> {
+    return this.makeRequest<{ message: string }>("/crawls/process-all", {
       method: "POST",
     });
   }
 
-  async getStats() {
-    return this.makeRequest("/stats");
+  async getStats(): Promise<{
+    total_crawls: number;
+    completed_crawls: number;
+    failed_crawls: number;
+  }> {
+    return this.makeRequest<{
+      total_crawls: number;
+      completed_crawls: number;
+      failed_crawls: number;
+    }>("/stats");
   }
 
   // Profile endpoints
-  async getProfile() {
-    return this.makeRequest("/profile");
+  async getProfile(): Promise<{ id: number; name: string; email: string }> {
+    return this.makeRequest<{ id: number; name: string; email: string }>(
+      "/profile"
+    );
   }
 
-  async updateProfile(name: string) {
-    return this.makeRequest("/profile", {
-      method: "PUT",
-      body: JSON.stringify({ name }),
-    });
+  async updateProfile(
+    name: string
+  ): Promise<{ id: number; name: string; email: string }> {
+    return this.makeRequest<{ id: number; name: string; email: string }>(
+      "/profile",
+      {
+        method: "PUT",
+        body: JSON.stringify({ name }),
+      }
+    );
   }
 }
 
