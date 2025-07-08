@@ -56,7 +56,7 @@ export const columns: ColumnDef<CrawlerResult>[] = [
     // },
     cell: ({ row }) => {
       const status = row.getValue("status") as CrawlStatus;
-      const progress = row.getValue("progress");
+      const progress = row.original.progress;
       return (
         <div>
           <StatusBadge status={status} />

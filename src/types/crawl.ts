@@ -14,4 +14,5 @@ export interface CrawlResult {
   error_message?: string;
   created_at: string;
   updated_at: string;
+  progress?: number;
 }
