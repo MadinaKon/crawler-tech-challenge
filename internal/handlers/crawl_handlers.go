@@ -288,34 +288,6 @@ func (h *CrawlHandler) normalizeAndValidateURL(inputURL string) (string, error) 
 	return normalizedURL, nil
 }
 
-// // Start background worker to process queued crawls
-// func(db *gorm.DB) {
-//     for {
-//         var crawl models.CrawlResult
-//         // Find a crawl with status "queued"
-//         if err := db.Where("status = ?", "queued").First(&crawl).Error; err == nil {
-//             // Set to running
-//             db.Model(&crawl).Updates(map[string]interface{}{
-//                 "status":   "running",
-//                 "progress": 0,
-//             })
-
-//             // Simulate crawl progress
-//             for i := 20; i <= 100; i += 20 {
-//                 time.Sleep(1 * time.Second) // Simulate work
-//                 db.Model(&crawl).Update("progress", i)
-//             }
-
-//             // Set to done
-//             db.Model(&crawl).Updates(map[string]interface{}{
-//                 "status":   "done",
-//                 "progress": 100,
-//             })
-//         }
-//         time.Sleep(2 * time.Second) // Poll every 2 seconds
-//     }
-// }(db)
-
 func (h *CrawlHandler) ProcessQueuedCrawls(c *gin.Context) {
     var crawl models.CrawlResult
     // Find the oldest queued crawl

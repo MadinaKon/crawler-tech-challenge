@@ -10,9 +10,9 @@ import (
 	"webcrawler-backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	// "time"
-   // "webcrawler-backend/internal/models"
-   //  "gorm.io/gorm"
+    "time"
+    "webcrawler-backend/internal/models"
+    "gorm.io/gorm"
 )
 
 // logWithLevel logs with a level and context (file, line, function)
@@ -120,6 +120,34 @@ func main() {
 			c.JSON(200, gin.H{"message": "Admin endpoint - user management coming soon"})
 		})
 	}
+
+	// Start background worker to process queued crawls automatically
+go func(db *gorm.DB) {
+    for {
+        var crawl models.CrawlResult
+        // Find the oldest crawl with status "queued"
+        if err := db.Where("status = ?", models.StatusQueued).Order("created_at asc").First(&crawl).Error; err == nil {
+            // Set to running
+            db.Model(&crawl).Updates(map[string]interface{}{
+                "status":   models.StatusRunning,
+                "progress": 0,
+            })
+
+            // Simulate crawl progress
+            for i := 20; i <= 100; i += 20 {
+                time.Sleep(1 * time.Second) // Simulate work
+                db.Model(&crawl).Update("progress", i)
+            }
+
+            // Set to done
+            db.Model(&crawl).Updates(map[string]interface{}{
+                "status":   models.StatusDone,
+                "progress": 100,
+            })
+        }
+        time.Sleep(2 * time.Second) // Poll every 2 seconds
+    }
+}(db)
 
 	// Start server
 	port := os.Getenv("PORT")
