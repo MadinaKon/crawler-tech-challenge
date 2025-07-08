@@ -13,12 +13,6 @@ import {
   Routes,
 } from "react-router-dom";
 
-interface User {
-  name: string;
-  email: string;
-  id: number;
-}
-
 function AppContent() {
   const { isAuthenticated, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(true);
@@ -52,7 +46,7 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 text-foreground">
         <div className="w-full max-w-md">
           {showLogin ? (
             <LoginForm
@@ -72,24 +66,24 @@ function AppContent() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background bg-blue-100 text-foreground">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-card shadow-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-xl font-semibold text-foreground">
                   Web Crawler Dashboard
                 </h1>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   Welcome,{" "}
                   {JSON.parse(localStorage.getItem("user") || "{}").name}
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm text-destructive hover:text-destructive-foreground"
                 >
                   Logout
                 </button>
