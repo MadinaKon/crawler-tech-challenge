@@ -105,11 +105,13 @@ export default function Detail() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "done":
         return "default";
-      case "pending":
+      case "queued":
         return "secondary";
-      case "failed":
+      case "running":
+        return "secondary";
+      case "error":
         return "destructive";
       default:
         return "outline";
