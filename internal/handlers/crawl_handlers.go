@@ -9,6 +9,7 @@ import (
 	"webcrawler-backend/internal/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"time"
 )
 
 // CrawlHandler handles crawl-related API requests
@@ -287,10 +288,81 @@ func (h *CrawlHandler) normalizeAndValidateURL(inputURL string) (string, error) 
 	return normalizedURL, nil
 }
 
-// ProcessPendingCrawls triggers processing of all pending crawl results
-func (h *CrawlHandler) ProcessPendingCrawls(c *gin.Context) {
-	// For now, just return a message that crawling is not implemented
-	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented"})
+// // Start background worker to process queued crawls
+// func(db *gorm.DB) {
+//     for {
+//         var crawl models.CrawlResult
+//         // Find a crawl with status "queued"
+//         if err := db.Where("status = ?", "queued").First(&crawl).Error; err == nil {
+//             // Set to running
+//             db.Model(&crawl).Updates(map[string]interface{}{
+//                 "status":   "running",
+//                 "progress": 0,
+//             })
+
+//             // Simulate crawl progress
+//             for i := 20; i <= 100; i += 20 {
+//                 time.Sleep(1 * time.Second) // Simulate work
+//                 db.Model(&crawl).Update("progress", i)
+//             }
+
+//             // Set to done
+//             db.Model(&crawl).Updates(map[string]interface{}{
+//                 "status":   "done",
+//                 "progress": 100,
+//             })
+//         }
+//         time.Sleep(2 * time.Second) // Poll every 2 seconds
+//     }
+// }(db)
+
+func (h *CrawlHandler) ProcessQueuedCrawls(c *gin.Context) {
+    var crawl models.CrawlResult
+    // Find the oldest queued crawl
+    if err := h.db.Where("status = ?", models.StatusQueued).Order("created_at asc").First(&crawl).Error; err != nil {
+        c.JSON(200, gin.H{"message": "No queued crawls to process"})
+        return
+    }
+
+    // Set to running
+    if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+        "status":   models.StatusRunning,
+        "progress": 0,
+    }).Error; err != nil {
+        c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to set running for crawl %d: %v", crawl.ID, err)})
+        return
+    }
+
+    // Simulate crawl progress
+    success := true
+    for i := 20; i <= 100; i += 20 {
+        time.Sleep(300 * time.Millisecond) // Simulate work
+        if err := h.db.Model(&crawl).Update("progress", i).Error; err != nil {
+            success = false
+            break
+        }
+    }
+
+    // Set to done or error
+    finalStatus := models.StatusDone
+    finalProgress := 100
+    if !success {
+        finalStatus = models.StatusError
+        finalProgress = 0
+    }
+    if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+        "status":   finalStatus,
+        "progress": finalProgress,
+    }).Error; err != nil {
+        c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to finalize crawl %d: %v", crawl.ID, err)})
+        return
+    }
+
+    c.JSON(200, gin.H{
+        "processed": crawl.ID,
+        "status":    finalStatus,
+        "message":   fmt.Sprintf("Processed crawl %d", crawl.ID),
+    })
 }
 
 // CrawlSingleURL processes a specific URL by ID
