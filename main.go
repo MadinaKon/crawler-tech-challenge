@@ -10,6 +10,9 @@ import (
 	"webcrawler-backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"time"
+    "webcrawler-backend/internal/models"
+    "gorm.io/gorm"
 )
 
 // logWithLevel logs with a level and context (file, line, function)
@@ -42,11 +45,41 @@ func main() {
 		os.Exit(1)
 	}
 
+
 	// Run migrations
 	if err := database.RunMigrations(db); err != nil {
 		logWithLevel("ERROR", "Failed to run migrations: %v", err)
 		os.Exit(1)
 	}
+
+
+	// Start background worker to process queued crawls
+go func(db *gorm.DB) {
+    for {
+        var crawl models.CrawlResult
+        // Find a crawl with status "queued"
+        if err := db.Where("status = ?", "queued").First(&crawl).Error; err == nil {
+            // Set to running
+            db.Model(&crawl).Updates(map[string]interface{}{
+                "status":   "running",
+                "progress": 0,
+            })
+
+            // Simulate crawl progress
+            for i := 20; i <= 100; i += 20 {
+                time.Sleep(1 * time.Second) // Simulate work
+                db.Model(&crawl).Update("progress", i)
+            }
+
+            // Set to done
+            db.Model(&crawl).Updates(map[string]interface{}{
+                "status":   "done",
+                "progress": 100,
+            })
+        }
+        time.Sleep(2 * time.Second) // Poll every 2 seconds
+    }
+}(db)
 
 	// Initialize handlers
 	crawlHandler := handlers.NewCrawlHandler(db)
