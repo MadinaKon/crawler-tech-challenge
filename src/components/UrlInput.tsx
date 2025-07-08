@@ -38,8 +38,13 @@ const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
       return;
     }
 
+    // Clean the URL first - remove any leading/trailing whitespace
+    const cleanUrl = url.trim();
 
-    const formattedUrl = url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) ? url : `https://${url}`;
+    // Check if URL already has a protocol (http://, https://, etc.)
+    const hasProtocol = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(cleanUrl);
+
+    const formattedUrl = hasProtocol ? cleanUrl : `https://${cleanUrl}`;
 
     if (!validateUrl(formattedUrl)) {
       const errorMsg = "Please enter a valid URL (e.g., https://example.com)";
@@ -66,6 +71,7 @@ const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
       <CardContent>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
+            id="url-input"
             type="text"
             placeholder="Enter website URL (e.g., example.com)"
             value={url}

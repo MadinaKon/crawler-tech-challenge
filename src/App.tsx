@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Toaster, ToastProvider } from "@/hooks/use-toast";
 import Dashboard from "@/pages/Dashboard";
 import Detail from "@/pages/Detail";
+import { apiService } from "@/services/api";
 import { useState } from "react";
 import {
   Navigate,
@@ -24,27 +25,24 @@ function AppContent() {
 
   const handleLoginSuccess = (token: string, user: any) => {
     const userWithRole = { ...user, role: user.role || "user" };
-    login(token, userWithRole);
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      login(token, refreshToken, userWithRole);
+    }
   };
 
   const handleRegisterSuccess = (token: string, user: any) => {
     const userWithRole = { ...user, role: user.role || "user" };
-    login(token, userWithRole);
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      login(token, refreshToken, userWithRole);
+    }
   };
 
   const handleLogout = async () => {
     try {
       // Call logout API
-      await fetch("http://localhost:8090/api/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-        body: JSON.stringify({
-          refresh_token: localStorage.getItem("refresh_token"),
-        }),
-      });
+      await apiService.logout();
     } catch (error) {
       console.error("Logout API call failed:", error);
     } finally {

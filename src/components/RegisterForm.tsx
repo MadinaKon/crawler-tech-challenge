@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/services/api";
 import React, { useState } from "react";
 
 interface User {
@@ -59,19 +60,7 @@ export default function RegisterForm({
     }
 
     try {
-      const response = await fetch("http://localhost:8090/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
-      }
+      const data = await apiService.register(name, email, password);
 
       // Store tokens
       localStorage.setItem("access_token", data.access_token);

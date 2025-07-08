@@ -23,68 +23,24 @@ func NewCrawlHandler(db *gorm.DB) *CrawlHandler {
 
 // GetCrawlResults returns all crawl results with enhanced filtering
 func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
-	var results []models.CrawlResult
-
-	h.db.Find(&results)
-    c.JSON(http.StatusOK, gin.H{"data": results})
-	
-	// Get query parameters for filtering
+	// Get query parameters
 	status := c.Query("status")
 	url := c.Query("url")
 	title := c.Query("title")
 	hasLoginForm := c.Query("has_login_form")
 	dateFrom := c.Query("date_from")
 	dateTo := c.Query("date_to")
-	limit := c.DefaultQuery("limit", "50")
-	offset := c.DefaultQuery("offset", "0")
 	sortBy := c.DefaultQuery("sort_by", "created_at")
 	sortOrder := c.DefaultQuery("sort_order", "desc")
-	
-	query := h.db.Model(&models.CrawlResult{})
-	
-	// Apply user ownership filter (users can only see their own crawls unless admin)
-	userRole, exists := c.Get("user_role")
-	if exists && userRole != "admin" {
-		userID, _ := c.Get("user_id")
-		query = query.Where("user_id = ?", userID)
+	limit := c.DefaultQuery("limit", "50")
+	offset := c.DefaultQuery("offset", "0")
+
+	// Validate sort order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
 	}
-	
-	// Apply status filter if provided
-	if status != "" {
-		query = query.Where("status = ?", status)
-	}
-	
-	// Apply URL filter (partial match)
-	if url != "" {
-		query = query.Where("url LIKE ?", "%"+url+"%")
-	}
-	
-	// Apply title filter (partial match)
-	if title != "" {
-		query = query.Where("title LIKE ?", "%"+title+"%")
-	}
-	
-	// Apply login form filter
-	if hasLoginForm != "" {
-		hasLogin := hasLoginForm == "true"
-		query = query.Where("has_login_form = ?", hasLogin)
-	}
-	
-	// Apply date range filters
-	if dateFrom != "" {
-		query = query.Where("created_at >= ?", dateFrom)
-	}
-	if dateTo != "" {
-		query = query.Where("created_at <= ?", dateTo)
-	}
-	
-	// Apply sorting
-	sortDirection := "DESC"
-	if sortOrder == "asc" {
-		sortDirection = "ASC"
-	}
-	
-	// Validate sort_by field to prevent SQL injection
+
+	// Validate sort by field
 	allowedSortFields := map[string]bool{
 		"created_at": true,
 		"updated_at": true,
@@ -92,11 +48,52 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 		"title":      true,
 		"status":     true,
 	}
-	
 	if !allowedSortFields[sortBy] {
 		sortBy = "created_at"
 	}
-	
+
+	var results []models.CrawlResult
+	query := h.db.Model(&models.CrawlResult{})
+
+	// Check if user is authenticated and get their role
+	userRole, exists := c.Get("user_role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Apply user-based filtering (non-admin users only see their own crawls)
+	if userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		query = query.Where("user_id = ?", userID)
+	}
+
+	// Apply filters
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if url != "" {
+		query = query.Where("url LIKE ?", "%"+url+"%")
+	}
+	if title != "" {
+		query = query.Where("title LIKE ?", "%"+title+"%")
+	}
+	if hasLoginForm != "" {
+		hasLogin := hasLoginForm == "true"
+		query = query.Where("has_login_form = ?", hasLogin)
+	}
+	if dateFrom != "" {
+		query = query.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		query = query.Where("created_at <= ?", dateTo)
+	}
+
+	// Apply sorting
+	sortDirection := "DESC"
+	if sortOrder == "asc" {
+		sortDirection = "ASC"
+	}
 	query = query.Order(sortBy + " " + sortDirection)
 	
 	// Apply pagination
@@ -145,7 +142,7 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 	
 	countQuery.Count(&totalCount)
 	
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"data": results,
 		"pagination": gin.H{
 			"total":   totalCount,
@@ -163,7 +160,9 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 			"sort_by":       sortBy,
 			"sort_order":    sortOrder,
 		},
-	})
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
 
 // GetCrawlResultByID returns a specific crawl result with its broken links

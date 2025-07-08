@@ -1,3 +1,4 @@
+import { apiService } from "@/services/api";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 interface User {
@@ -11,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
   refreshToken: () => Promise<boolean>;
 }
@@ -42,11 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = (newToken: string, userData: User) => {
+  const login = (newToken: string, newRefreshToken: string, userData: User) => {
     setToken(newToken);
     setUser(userData);
     setIsAuthenticated(true);
     localStorage.setItem("access_token", newToken);
+    localStorage.setItem("refresh_token", newRefreshToken);
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
@@ -67,19 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const response = await fetch("http://localhost:8090/api/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refresh_token: storedRefreshToken }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Token refresh failed");
-      }
-
-      const data = await response.json();
+      const data = await apiService.refreshToken(storedRefreshToken);
 
       // Update tokens
       localStorage.setItem("access_token", data.access_token);

@@ -3,10 +3,11 @@
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 import UrlInput from "@/components/UrlInput";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 import { CrawlResult, CrawlStatus } from "@/types/crawl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const allowedStatuses = ["queued", "running", "done", "error"] as const;
 type AllowedStatus = (typeof allowedStatuses)[number];
@@ -36,15 +37,28 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
   const { toast } = useToast();
+  const { logout } = useAuth();
 
-  async function fetchCrawls() {
+  const fetchCrawls = useCallback(async () => {
     try {
-      setIsLoading(true);
       const response = await apiService.getCrawls();
-      setCrawls(extractData<CrawlResult>(response).map(mapCrawlResult));
+      const newCrawls = extractData<CrawlResult>(response).map(mapCrawlResult);
+      setCrawls(newCrawls);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch data:", err);
+
+      // Check if it's an authentication error
+      if (err instanceof Error && err.message === "Authentication failed") {
+        toast({
+          title: "Session expired",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+        logout(); // This will redirect to login
+        return;
+      }
+
       toast({
         title: "Failed to fetch data",
         description: err instanceof Error ? err.message : "An error occurred",
@@ -52,40 +66,56 @@ export default function Dashboard() {
       });
       setCrawls([]);
       setError(err instanceof Error ? err.message : "Failed to fetch data");
-    } finally {
+    }
+  }, [toast, logout]);
+
+  // Initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      await fetchCrawls();
       setIsLoading(false);
+    };
+    loadInitialData();
+  }, [fetchCrawls]);
+
+  // Polling for updates (only when there are active crawls)
+  useEffect(() => {
+    const hasActiveCrawls = crawls.some(
+      (crawl) => crawl.status === "queued" || crawl.status === "running"
+    );
+
+    if (!hasActiveCrawls) {
+      return; // Don't poll if no active crawls
     }
-  }
 
-  useEffect(() => {
-    fetchCrawls();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(fetchCrawls, 2000);
+    const interval = setInterval(fetchCrawls, 3000); // Increased to 3 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchCrawls, crawls]);
 
-  const handleAddUrl = async (url: string) => {
-    setIsAddingUrl(true);
-    try {
-      await apiService.createCrawl(url);
-      toast({
-        title: "URL added successfully",
-        description: "The URL has been added to the crawl queue.",
-      });
-      fetchCrawls();
-    } catch (error) {
-      toast({
-        title: "Failed to add URL",
-        description:
-          error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingUrl(false);
-    }
-  };
+  const handleAddUrl = useCallback(
+    async (url: string) => {
+      setIsAddingUrl(true);
+      try {
+        await apiService.createCrawl(url);
+        toast({
+          title: "URL added successfully",
+          description: "The URL has been added to the crawl queue.",
+        });
+        await fetchCrawls(); // Refresh data after adding
+      } catch (error) {
+        toast({
+          title: "Failed to add URL",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsAddingUrl(false);
+      }
+    },
+    [fetchCrawls, toast]
+  );
 
   if (isLoading) {
     return (
@@ -110,7 +140,15 @@ export default function Dashboard() {
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800 mb-2">{error}</p>
+          {error === "Authentication failed" && (
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Log In Again
+            </button>
+          )}
         </div>
       )}
 

@@ -34,7 +34,7 @@ interface BrokenLink {
 }
 
 class ApiService {
-  private baseURL = "http://localhost:8080/api";
+  private baseURL = "http://localhost:8090/api";
 
   private async makeRequest<T = unknown>(
     endpoint: string,
@@ -66,7 +66,7 @@ class ApiService {
 
       // Handle 401 Unauthorized - try to refresh token
       if (response.status === 401 && requireAuth) {
-        const refreshSuccess = await this.refreshToken();
+        const refreshSuccess = await this._refreshTokenInternal();
         if (refreshSuccess) {
           // Retry the request with new token
           const newToken = localStorage.getItem("access_token");
@@ -109,7 +109,7 @@ class ApiService {
     return response.text() as T;
   }
 
-  private async refreshToken(): Promise<boolean> {
+  private async _refreshTokenInternal(): Promise<boolean> {
     const refreshToken = localStorage.getItem("refresh_token");
     if (!refreshToken) {
       return false;
@@ -165,6 +165,25 @@ class ApiService {
     );
   }
 
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Token refresh failed");
+    }
+
+    const data = await response.json();
+    localStorage.setItem("access_token", data.access_token);
+    localStorage.setItem("refresh_token", data.refresh_token);
+    return data;
+  }
+
   async logout(): Promise<void> {
     const refreshToken = localStorage.getItem("refresh_token");
     if (refreshToken) {
@@ -183,7 +202,8 @@ class ApiService {
   async getCrawls(params?: Record<string, string>): Promise<CrawlResult[]> {
     const queryString = params ? new URLSearchParams(params).toString() : "";
     const endpoint = queryString ? `/crawls?${queryString}` : "/crawls";
-    return this.makeRequest<CrawlResult[]>(endpoint);
+    const response = await this.makeRequest<{ data: CrawlResult[] }>(endpoint);
+    return response.data || [];
   }
 
   async createCrawl(url: string): Promise<CrawlResult> {

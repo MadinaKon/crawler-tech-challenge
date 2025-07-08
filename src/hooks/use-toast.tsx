@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 
 interface ToastOptions {
   title: string;
@@ -26,16 +32,28 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [toasts, setToasts] = useState<ToastOptions[]>([]);
+  const timeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
-  const toast = (options: ToastOptions) => {
-    const newToast = { ...options, id: Date.now() };
+  const toast = useCallback((options: ToastOptions) => {
+    // Generate a more unique ID by combining timestamp with random number
+    const newToast = { ...options, id: Date.now() + Math.random() };
+
     setToasts((prev) => [...prev, newToast]);
 
+    // Clear any existing timeout for this toast
+    const existingTimeout = timeoutsRef.current.get(newToast.id);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+
     // Auto remove after 5 seconds
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
+      timeoutsRef.current.delete(newToast.id);
     }, 5000);
-  };
+
+    timeoutsRef.current.set(newToast.id, timeout);
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toast, toasts }}>
