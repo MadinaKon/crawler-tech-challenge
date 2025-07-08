@@ -3,87 +3,121 @@
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 import UrlInput from "@/components/UrlInput";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
-import { useEffect, useState } from "react";
+import { CrawlResult, CrawlStatus } from "@/types/crawl";
+import { useCallback, useEffect, useState } from "react";
 
-interface CrawlResult {
-  id: number;
-  url: string;
-  title: string;
-  status: "pending" | "completed" | "failed";
-  html_version: string;
-  heading_counts: Record<string, number>;
-  internal_links: number;
-  external_links: number;
-  inaccessible_links: number;
-  has_login_form: boolean;
-  error_message?: string;
-  created_at: string;
-  updated_at: string;
+const allowedStatuses = ["queued", "running", "done", "error"] as const;
+type AllowedStatus = (typeof allowedStatuses)[number];
+
+function mapCrawlResult(raw: any): CrawlResult {
+  return {
+    ...raw,
+    status: allowedStatuses.includes(raw.status as AllowedStatus)
+      ? (raw.status as CrawlStatus)
+      : "queued",
+  };
+}
+
+function extractData<T>(response: any): T[] {
+  if (Array.isArray(response)) {
+    return response;
+  } else if (response && Array.isArray(response.data)) {
+    return response.data;
+  } else {
+    return [];
+  }
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState<CrawlResult[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [crawls, setCrawls] = useState<CrawlResult[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
   const { toast } = useToast();
+  const { logout } = useAuth();
 
-  const fetchData = async () => {
+  const fetchCrawls = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await apiService.getCrawls();
-
-      // Handle both old and new API response formats
-      if (Array.isArray(response)) {
-        // Old format: just an array
-        setData(response);
-      } else if (response.data && Array.isArray(response.data)) {
-        // New format: object with data, pagination, filters
-        setData(response.data);
-      } else {
-        // Fallback: empty data
-        setData([]);
-      }
-
+      const newCrawls = extractData<CrawlResult>(response).map(mapCrawlResult);
+      setCrawls(newCrawls);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch data:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch data");
-      // Set empty data on error to prevent undefined errors
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+      // Check if it's an authentication error
+      if (err instanceof Error && err.message === "Authentication failed") {
+        toast({
+          title: "Session expired",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+        logout(); // This will redirect to login
+        return;
+      }
 
-  const handleAddUrl = async (url: string) => {
-    setIsAddingUrl(true);
-    try {
-      await apiService.createCrawl(url);
       toast({
-        title: "URL added successfully",
-        description: "The URL has been added to the crawl queue.",
-      });
-      fetchData(); // Refresh the data
-    } catch (error) {
-      toast({
-        title: "Failed to add URL",
-        description:
-          error instanceof Error ? error.message : "An error occurred",
+        title: "Failed to fetch data",
+        description: err instanceof Error ? err.message : "An error occurred",
         variant: "destructive",
       });
-    } finally {
-      setIsAddingUrl(false);
+      setCrawls([]);
+      setError(err instanceof Error ? err.message : "Failed to fetch data");
     }
-  };
+  }, [toast, logout]);
 
-  if (loading) {
+  // Initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      await fetchCrawls();
+      setIsLoading(false);
+    };
+    loadInitialData();
+  }, [fetchCrawls]);
+
+  // Polling for updates (only when there are active crawls)
+  useEffect(() => {
+    const hasActiveCrawls = crawls.some(
+      (crawl) => crawl.status === "queued" || crawl.status === "running"
+    );
+
+    if (!hasActiveCrawls) {
+      return; // Don't poll if no active crawls
+    }
+
+    const interval = setInterval(fetchCrawls, 3000); // Increased to 3 seconds
+    return () => clearInterval(interval);
+  }, [fetchCrawls, crawls]);
+
+  const handleAddUrl = useCallback(
+    async (url: string) => {
+      setIsAddingUrl(true);
+      try {
+        await apiService.createCrawl(url);
+        toast({
+          title: "URL added successfully",
+          description: "The URL has been added to the crawl queue.",
+        });
+        await fetchCrawls(); // Refresh data after adding
+      } catch (error) {
+        toast({
+          title: "Failed to add URL",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsAddingUrl(false);
+      }
+    },
+    [fetchCrawls, toast]
+  );
+
+  if (isLoading) {
     return (
       <div className="container mx-auto py-10">
         <div className="flex items-center justify-center h-64">
@@ -106,11 +140,19 @@ export default function Dashboard() {
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800 mb-2">{error}</p>
+          {error === "Authentication failed" && (
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Log In Again
+            </button>
+          )}
         </div>
       )}
 
-      {data.length === 0 ? (
+      {crawls.length === 0 ? (
         <div className="text-center py-12">
           <h3
             className="text-lg font-medium text-gray-900 mb-2"
@@ -123,7 +165,7 @@ export default function Dashboard() {
           </p>
         </div>
       ) : (
-        <DataTable columns={columns} data={data} />
+        <DataTable columns={columns} data={crawls} />
       )}
     </div>
   );

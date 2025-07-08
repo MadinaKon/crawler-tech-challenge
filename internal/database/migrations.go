@@ -2,32 +2,46 @@ package database
 
 import (
 	"log"
+	"runtime"
+	"fmt"
 	"webcrawler-backend/internal/models"
 	"gorm.io/gorm"
 )
 
+// logWithLevel logs with a level and context (file, line, function)
+func logWithLevel(level string, msg string, args ...interface{}) {
+	pc, file, line, ok := runtime.Caller(1)
+	funcName := "?"
+	if ok {
+		funcName = runtime.FuncForPC(pc).Name()
+	}
+	log.Printf("[%s] (%s:%d %s) %s", level, file, line, funcName, fmt.Sprintf(msg, args...))
+}
+
 // DropTables drops existing tables to fix migration issues
 func DropTables(db *gorm.DB) error {
-	log.Println("Dropping existing tables...")
+	logWithLevel("INFO", "Dropping existing tables...")
 	
 	// Drop tables in correct order (child first, then parent)
 	err := db.Migrator().DropTable(&models.BrokenLink{})
 	if err != nil {
+		logWithLevel("ERROR", "Failed to drop BrokenLink: %v", err)
 		return err
 	}
 	
 	err = db.Migrator().DropTable(&models.CrawlResult{})
 	if err != nil {
+		logWithLevel("ERROR", "Failed to drop CrawlResult: %v", err)
 		return err
 	}
 	
-	log.Println("Tables dropped successfully")
+	logWithLevel("INFO", "Tables dropped successfully")
 	return nil
 }
 
 // RunMigrations runs all database migrations
 func RunMigrations(db *gorm.DB) error {
-	log.Println("Running database migrations...")
+	logWithLevel("INFO", "Running database migrations...")
 
 	// Auto migrate all models
 	err := db.AutoMigrate(
@@ -38,16 +52,17 @@ func RunMigrations(db *gorm.DB) error {
 		&models.BrokenLink{},
 	)
 	if err != nil {
+		logWithLevel("ERROR", "AutoMigrate failed: %v", err)
 		return err
 	}
 
-	log.Println("Database migrations completed successfully!")
+	logWithLevel("INFO", "Database migrations completed successfully!")
 	return nil
 }
 
 // CreateTables creates the database tables if they don't exist
 func CreateTables(db *gorm.DB) error {
-	log.Println("Creating database tables...")
+	logWithLevel("INFO", "Creating database tables...")
 
 	// Create crawl_results table
 	err := db.Exec(`
@@ -56,7 +71,7 @@ func CreateTables(db *gorm.DB) error {
 			url VARCHAR(500) NOT NULL,
 			title VARCHAR(500),
 			html_version VARCHAR(10),
-			status VARCHAR(50) NOT NULL DEFAULT 'pending',
+			status VARCHAR(50) NOT NULL DEFAULT 'queued',
 			heading_counts JSON,
 			internal_links INT DEFAULT 0,
 			external_links INT DEFAULT 0,
@@ -74,6 +89,7 @@ func CreateTables(db *gorm.DB) error {
 	`).Error
 
 	if err != nil {
+		logWithLevel("ERROR", "Failed to create crawl_results: %v", err)
 		return err
 	}
 
@@ -99,9 +115,10 @@ func CreateTables(db *gorm.DB) error {
 	`).Error
 
 	if err != nil {
+		logWithLevel("ERROR", "Failed to create broken_links: %v", err)
 		return err
 	}
 
-	log.Println("Database tables created successfully")
+	logWithLevel("INFO", "Database tables created successfully")
 	return nil
 } 

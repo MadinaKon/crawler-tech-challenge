@@ -1,21 +1,10 @@
 // columns.tsx
 import { ActionsCell } from "@/components/ActionsCell";
-import { Badge } from "@/components/ui/badge";
+import StatusBadge from "@/components/StatusBadge";
+import { CrawlResult, CrawlStatus } from "@/types/crawl";
 import { ColumnDef } from "@tanstack/react-table";
 
-export type CrawlerResult = {
-  id: number;
-  url: string;
-  title: string;
-  html_version: string;
-  internal_links: number;
-  external_links: number;
-  inaccessible_links: number;
-  has_login_form: boolean;
-  status: "pending" | "completed" | "failed";
-  created_at: string;
-  updated_at: string;
-};
+export type CrawlerResult = CrawlResult;
 
 export const columns: ColumnDef<CrawlerResult>[] = [
   {
@@ -61,18 +50,25 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "status",
     header: "Status",
+    // cell: ({ row }) => {
+    //   const status = row.getValue("status") as CrawlStatus;
+    //   return <StatusBadge status={status} />;
+    // },
     cell: ({ row }) => {
-      const status = row.getValue("status") as CrawlerResult["status"];
-
-      const colors: Record<
-        CrawlerResult["status"],
-        "secondary" | "default" | "destructive" | "outline"
-      > = {
-        pending: "secondary",
-        completed: "default",
-        failed: "destructive",
-      };
-      return <Badge variant={colors[status] || "outline"}>{status}</Badge>;
+      const status = row.getValue("status") as CrawlStatus;
+      const progress = row.original.progress;
+      return (
+        <div>
+          <StatusBadge status={status} />
+          {status === "running" && typeof progress === "number" && (
+            <progress
+              value={progress}
+              max={100}
+              className="ml-2 align-middle"
+            />
+          )}
+        </div>
+      );
     },
   },
   {

@@ -9,6 +9,7 @@ import (
 	"webcrawler-backend/internal/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"time"
 )
 
 // CrawlHandler handles crawl-related API requests
@@ -23,65 +24,24 @@ func NewCrawlHandler(db *gorm.DB) *CrawlHandler {
 
 // GetCrawlResults returns all crawl results with enhanced filtering
 func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
-	var results []models.CrawlResult
-	
-	// Get query parameters for filtering
+	// Get query parameters
 	status := c.Query("status")
 	url := c.Query("url")
 	title := c.Query("title")
 	hasLoginForm := c.Query("has_login_form")
 	dateFrom := c.Query("date_from")
 	dateTo := c.Query("date_to")
-	limit := c.DefaultQuery("limit", "50")
-	offset := c.DefaultQuery("offset", "0")
 	sortBy := c.DefaultQuery("sort_by", "created_at")
 	sortOrder := c.DefaultQuery("sort_order", "desc")
-	
-	query := h.db.Model(&models.CrawlResult{})
-	
-	// Apply user ownership filter (users can only see their own crawls unless admin)
-	userRole, exists := c.Get("user_role")
-	if exists && userRole != "admin" {
-		userID, _ := c.Get("user_id")
-		query = query.Where("user_id = ?", userID)
+	limit := c.DefaultQuery("limit", "50")
+	offset := c.DefaultQuery("offset", "0")
+
+	// Validate sort order
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
 	}
-	
-	// Apply status filter if provided
-	if status != "" {
-		query = query.Where("status = ?", status)
-	}
-	
-	// Apply URL filter (partial match)
-	if url != "" {
-		query = query.Where("url LIKE ?", "%"+url+"%")
-	}
-	
-	// Apply title filter (partial match)
-	if title != "" {
-		query = query.Where("title LIKE ?", "%"+title+"%")
-	}
-	
-	// Apply login form filter
-	if hasLoginForm != "" {
-		hasLogin := hasLoginForm == "true"
-		query = query.Where("has_login_form = ?", hasLogin)
-	}
-	
-	// Apply date range filters
-	if dateFrom != "" {
-		query = query.Where("created_at >= ?", dateFrom)
-	}
-	if dateTo != "" {
-		query = query.Where("created_at <= ?", dateTo)
-	}
-	
-	// Apply sorting
-	sortDirection := "DESC"
-	if sortOrder == "asc" {
-		sortDirection = "ASC"
-	}
-	
-	// Validate sort_by field to prevent SQL injection
+
+	// Validate sort by field
 	allowedSortFields := map[string]bool{
 		"created_at": true,
 		"updated_at": true,
@@ -89,11 +49,52 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 		"title":      true,
 		"status":     true,
 	}
-	
 	if !allowedSortFields[sortBy] {
 		sortBy = "created_at"
 	}
-	
+
+	var results []models.CrawlResult
+	query := h.db.Model(&models.CrawlResult{})
+
+	// Check if user is authenticated and get their role
+	userRole, exists := c.Get("user_role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Apply user-based filtering (non-admin users only see their own crawls)
+	if userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		query = query.Where("user_id = ?", userID)
+	}
+
+	// Apply filters
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if url != "" {
+		query = query.Where("url LIKE ?", "%"+url+"%")
+	}
+	if title != "" {
+		query = query.Where("title LIKE ?", "%"+title+"%")
+	}
+	if hasLoginForm != "" {
+		hasLogin := hasLoginForm == "true"
+		query = query.Where("has_login_form = ?", hasLogin)
+	}
+	if dateFrom != "" {
+		query = query.Where("created_at >= ?", dateFrom)
+	}
+	if dateTo != "" {
+		query = query.Where("created_at <= ?", dateTo)
+	}
+
+	// Apply sorting
+	sortDirection := "DESC"
+	if sortOrder == "asc" {
+		sortDirection = "ASC"
+	}
 	query = query.Order(sortBy + " " + sortDirection)
 	
 	// Apply pagination
@@ -142,7 +143,7 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 	
 	countQuery.Count(&totalCount)
 	
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"data": results,
 		"pagination": gin.H{
 			"total":   totalCount,
@@ -160,7 +161,9 @@ func (h *CrawlHandler) GetCrawlResults(c *gin.Context) {
 			"sort_by":       sortBy,
 			"sort_order":    sortOrder,
 		},
-	})
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
 
 // GetCrawlResultByID returns a specific crawl result with its broken links
@@ -230,11 +233,11 @@ func (h *CrawlHandler) CreateCrawlResult(c *gin.Context) {
 		return
 	}
 	
-	// Create a new crawl result with pending status
+	// Create a new crawl result with queued status
 	userIDUint := userID.(uint)
 	crawlResult := models.CrawlResult{
 		URL:           normalizedURL,
-		Status:        "pending",
+		Status:        models.StatusQueued,
 		UserID:        &userIDUint,
 	}
 	
@@ -285,10 +288,53 @@ func (h *CrawlHandler) normalizeAndValidateURL(inputURL string) (string, error) 
 	return normalizedURL, nil
 }
 
-// ProcessPendingCrawls triggers processing of all pending crawl results
-func (h *CrawlHandler) ProcessPendingCrawls(c *gin.Context) {
-	// For now, just return a message that crawling is not implemented
-	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented"})
+func (h *CrawlHandler) ProcessQueuedCrawls(c *gin.Context) {
+    var crawl models.CrawlResult
+    // Find the oldest queued crawl
+    if err := h.db.Where("status = ?", models.StatusQueued).Order("created_at asc").First(&crawl).Error; err != nil {
+        c.JSON(200, gin.H{"message": "No queued crawls to process"})
+        return
+    }
+
+    // Set to running
+    if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+        "status":   models.StatusRunning,
+        "progress": 0,
+    }).Error; err != nil {
+        c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to set running for crawl %d: %v", crawl.ID, err)})
+        return
+    }
+
+    // Simulate crawl progress
+    success := true
+    for i := 20; i <= 100; i += 20 {
+        time.Sleep(300 * time.Millisecond) // Simulate work
+        if err := h.db.Model(&crawl).Update("progress", i).Error; err != nil {
+            success = false
+            break
+        }
+    }
+
+    // Set to done or error
+    finalStatus := models.StatusDone
+    finalProgress := 100
+    if !success {
+        finalStatus = models.StatusError
+        finalProgress = 0
+    }
+    if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+        "status":   finalStatus,
+        "progress": finalProgress,
+    }).Error; err != nil {
+        c.JSON(500, gin.H{"error": fmt.Sprintf("Failed to finalize crawl %d: %v", crawl.ID, err)})
+        return
+    }
+
+    c.JSON(200, gin.H{
+        "processed": crawl.ID,
+        "status":    finalStatus,
+        "message":   fmt.Sprintf("Processed crawl %d", crawl.ID),
+    })
 }
 
 // CrawlSingleURL processes a specific URL by ID
@@ -308,17 +354,19 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 func (h *CrawlHandler) GetStats(c *gin.Context) {
 	var stats struct {
 		TotalCrawls     int64 `json:"total_crawls"`
-		CompletedCrawls int64 `json:"completed_crawls"`
-		FailedCrawls    int64 `json:"failed_crawls"`
-		PendingCrawls   int64 `json:"pending_crawls"`
+		DoneCrawls      int64 `json:"done_crawls"`
+		ErrorCrawls     int64 `json:"error_crawls"`
+		QueuedCrawls    int64 `json:"queued_crawls"`
+		RunningCrawls   int64 `json:"running_crawls"`
 		TotalBrokenLinks int64 `json:"total_broken_links"`
 	}
 	
 	// Count by status
 	h.db.Model(&models.CrawlResult{}).Count(&stats.TotalCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "completed").Count(&stats.CompletedCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "failed").Count(&stats.FailedCrawls)
-	h.db.Model(&models.CrawlResult{}).Where("status = ?", "pending").Count(&stats.PendingCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusDone).Count(&stats.DoneCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusError).Count(&stats.ErrorCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusQueued).Count(&stats.QueuedCrawls)
+	h.db.Model(&models.CrawlResult{}).Where("status = ?", models.StatusRunning).Count(&stats.RunningCrawls)
 	h.db.Model(&models.BrokenLink{}).Count(&stats.TotalBrokenLinks)
 	
 	c.JSON(http.StatusOK, stats)

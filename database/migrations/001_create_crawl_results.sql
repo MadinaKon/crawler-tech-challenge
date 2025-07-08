@@ -4,7 +4,7 @@ CREATE TABLE crawl_results (
     url VARCHAR(500) NOT NULL,
     title VARCHAR(500),
     html_version VARCHAR(10),
-    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    status ENUM('queued', 'running', 'done', 'error') NOT NULL DEFAULT 'queued',
     
     -- Heading counts stored as JSON
     heading_counts JSON,

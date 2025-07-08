@@ -39,7 +39,7 @@ The Cypress test suite covers the following happy-path scenarios:
 - ✅ Crawl details page layout
 - ✅ Crawl statistics display
 - ✅ Broken links section
-- ✅ Different crawl statuses (pending, completed, failed)
+- ✅ Different crawl statuses (queued, running, done, error)
 - ✅ Navigation back to dashboard
 - ✅ Error handling and loading states
 

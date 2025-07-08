@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/services/api";
 import React, { useState } from "react";
 
 interface User {
@@ -35,19 +36,7 @@ export default function LoginForm({
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8090/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed");
-      }
+      const data = await apiService.login(email, password);
 
       // Store tokens
       localStorage.setItem("access_token", data.access_token);

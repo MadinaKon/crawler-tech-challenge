@@ -2,31 +2,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
+import { CrawlResult, CrawlStatus } from "@/types/crawl";
 import { AlertTriangle, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-interface CrawlResult {
-  id: number;
-  url: string;
-  title: string;
-  status: "pending" | "completed" | "failed";
-  html_version: string;
-  heading_counts: Record<string, number>;
-  internal_links: number;
-  external_links: number;
-  inaccessible_links: number;
-  has_login_form: boolean;
-  error_message?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 interface BrokenLink {
   id: number;
   url: string;
   status_code: number;
   error_message?: string;
+}
+
+const allowedStatuses = ["queued", "running", "done", "error"] as const;
+type AllowedStatus = (typeof allowedStatuses)[number];
+
+function mapCrawlResult(raw: any): CrawlResult {
+  return {
+    ...raw,
+    status: allowedStatuses.includes(raw.status as AllowedStatus)
+      ? (raw.status as CrawlStatus)
+      : "queued",
+  };
 }
 
 export default function Detail() {
@@ -49,7 +46,7 @@ export default function Detail() {
           apiService.getBrokenLinks(id),
         ]);
 
-        setCrawlResult(crawlData);
+        setCrawlResult(mapCrawlResult(crawlData));
         setBrokenLinks(brokenLinksData);
         setError(null);
       } catch (err) {
@@ -108,11 +105,13 @@ export default function Detail() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "done":
         return "default";
-      case "pending":
+      case "queued":
         return "secondary";
-      case "failed":
+      case "running":
+        return "secondary";
+      case "error":
         return "destructive";
       default:
         return "outline";
