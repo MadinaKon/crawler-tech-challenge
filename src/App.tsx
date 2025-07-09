@@ -13,12 +13,6 @@ import {
   Routes,
 } from "react-router-dom";
 
-interface User {
-  name: string;
-  email: string;
-  id: number;
-}
-
 function AppContent() {
   const { isAuthenticated, login, logout } = useAuth();
   const [showLogin, setShowLogin] = useState(true);
