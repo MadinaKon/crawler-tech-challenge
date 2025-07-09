@@ -35,20 +35,6 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  // const table = useReactTable({
-  //   data,
-  //   columns,
-  //   state: {
-  //     sorting,
-  //     globalFilter,
-  //   },
-  //   onSortingChange: setSorting,
-  //   onGlobalFilterChange: setGlobalFilter,
-  //   getCoreRowModel: getCoreRowModel(),
-  //   getPaginationRowModel: getPaginationRowModel(),
-  //   getSortedRowModel: getSortedRowModel(),
-  // });
-
   const table = useReactTable({
     data,
     columns,
