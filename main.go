@@ -108,6 +108,7 @@ func main() {
 		api.GET("/crawls/:id/broken-links", crawlHandler.GetBrokenLinks)
 		api.POST("/crawls/:id/process", crawlHandler.CrawlSingleURL)
 		api.POST("/crawls/:id/stop", crawlHandler.StopCrawlByID)
+		api.DELETE("/crawls/:id", crawlHandler.DeleteCrawlResult)
 		api.POST("/crawls/process-all", crawlHandler.ProcessQueuedCrawls)
 		api.GET("/stats", crawlHandler.GetStats)
 	}

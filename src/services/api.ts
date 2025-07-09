@@ -233,6 +233,20 @@ class ApiService {
     });
   }
 
+  async deleteCrawl(
+    crawlId: string
+  ): Promise<{
+    message: string;
+    deleted_crawl: { id: number; url: string; title: string };
+  }> {
+    return this.makeRequest<{
+      message: string;
+      deleted_crawl: { id: number; url: string; title: string };
+    }>(`/crawls/${crawlId}`, {
+      method: "DELETE",
+    });
+  }
+
   async processAllCrawls(): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>("/crawls/process-all", {
       method: "POST",

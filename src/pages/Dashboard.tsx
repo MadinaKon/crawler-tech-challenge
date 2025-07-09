@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
   const [reRunningId, setReRunningId] = useState<number | null>(null);
+  const [selectedCrawls, setSelectedCrawls] = useState<number[]>([]);
   const { toast } = useToast();
   const { logout } = useAuth();
 
@@ -80,6 +81,152 @@ export default function Dashboard() {
     loadInitialData();
   }, [fetchCrawls]);
 
+  const handleAddUrl = useCallback(
+    async (url: string) => {
+      setIsAddingUrl(true);
+      try {
+        await apiService.createCrawl(url);
+        toast({
+          title: "URL added successfully",
+          description: "The URL has been added to the crawl queue.",
+        });
+        await fetchCrawls(); // Refresh data after adding
+      } catch (error) {
+        toast({
+          title: "Failed to add URL",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      } finally {
+        setIsAddingUrl(false);
+      }
+    },
+    [fetchCrawls, toast]
+  );
+
+  useEffect(() => {
+    if (
+      reRunningId &&
+      !crawls.some((c) => c.id === reRunningId && c.status === "running")
+    ) {
+      setReRunningId(null);
+    }
+  }, [crawls, reRunningId]);
+
+  // Polling for updates (only when there are active crawls)
+  useEffect(() => {
+    const hasActiveCrawls = crawls.some(
+      (crawl) => crawl.status === "queued" || crawl.status === "running"
+    );
+
+    if (!hasActiveCrawls) {
+      return; // Don't poll if no active crawls
+    }
+
+    const interval = setInterval(fetchCrawls, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
+  }, [fetchCrawls, crawls]);
+
+  const handleBulkReRun = useCallback(async () => {
+    if (selectedCrawls.length === 0) {
+      toast({
+        title: "No crawls selected",
+        description: "Please select crawls to re-run",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    for (const id of selectedCrawls) {
+      try {
+        await apiService.processCrawl(id.toString());
+      } catch (error) {
+        console.error(`Failed to re-run crawl ${id}:`, error);
+      }
+    }
+
+    toast({
+      title: "Bulk re-run started",
+      description: `Re-running ${selectedCrawls.length} crawl(s)`,
+    });
+
+    setSelectedCrawls([]);
+    await fetchCrawls();
+  }, [selectedCrawls, fetchCrawls, toast]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedCrawls.length === 0) {
+      toast({
+        title: "No crawls selected",
+        description: "Please select crawls to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Confirm deletion
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedCrawls.length} crawl(s)?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const deletedCrawls: Array<{ id: number; url: string; title: string }> =
+        [];
+
+      // Delete each selected crawl
+      for (const id of selectedCrawls) {
+        try {
+          const response = await apiService.deleteCrawl(id.toString());
+          deletedCrawls.push(response.deleted_crawl);
+        } catch (error) {
+          console.error(`Failed to delete crawl ${id}:`, error);
+          toast({
+            title: "Delete failed",
+            description: `Failed to delete crawl ${id}: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      if (deletedCrawls.length > 0) {
+        // Show detailed information about deleted crawls
+        const deletedInfo = deletedCrawls
+          .map((crawl) => `ID ${crawl.id}: ${crawl.title || crawl.url}`)
+          .join("\n");
+
+        toast({
+          title: "Bulk delete completed",
+          description: `Successfully deleted ${deletedCrawls.length} crawl(s):\n${deletedInfo}`,
+        });
+      }
+
+      setSelectedCrawls([]);
+      await fetchCrawls(); // Refresh the data
+    } catch (error) {
+      toast({
+        title: "Bulk delete failed",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [selectedCrawls, fetchCrawls, toast]);
+
+  const handleSelectionChange = useCallback((selectedIds: string[]) => {
+    // Convert string IDs to numbers - these are now actual crawl IDs
+    const numericIds = selectedIds
+      .map((id) => parseInt(id, 10))
+      .filter((id) => !isNaN(id));
+    setSelectedCrawls(numericIds);
+  }, []);
+
   const handleStart = useCallback(
     async (id: number) => {
       try {
@@ -121,61 +268,6 @@ export default function Dashboard() {
     },
     [fetchCrawls, toast]
   );
-
-  const handleAddUrl = useCallback(
-    async (url: string) => {
-      setIsAddingUrl(true);
-      try {
-        await apiService.createCrawl(url);
-        toast({
-          title: "URL added successfully",
-          description: "The URL has been added to the crawl queue.",
-        });
-        await fetchCrawls(); // Refresh data after adding
-      } catch (error) {
-        toast({
-          title: "Failed to add URL",
-          description:
-            error instanceof Error ? error.message : "An error occurred",
-          variant: "destructive",
-        });
-      } finally {
-        setIsAddingUrl(false);
-      }
-    },
-    [fetchCrawls, toast]
-  );
-
-  const handleReRun = useCallback(
-    async (id: number) => {
-      setReRunningId(id);
-      await handleStart(id);
-    },
-    [handleStart]
-  );
-
-  useEffect(() => {
-    if (
-      reRunningId &&
-      !crawls.some((c) => c.id === reRunningId && c.status === "running")
-    ) {
-      setReRunningId(null);
-    }
-  }, [crawls, reRunningId]);
-
-  // Polling for updates (only when there are active crawls)
-  useEffect(() => {
-    const hasActiveCrawls = crawls.some(
-      (crawl) => crawl.status === "queued" || crawl.status === "running"
-    );
-
-    if (!hasActiveCrawls) {
-      return; // Don't poll if no active crawls
-    }
-
-    const interval = setInterval(fetchCrawls, 2000); // Poll every 2 seconds
-    return () => clearInterval(interval);
-  }, [fetchCrawls, crawls]);
 
   if (isLoading) {
     return (
@@ -227,12 +319,15 @@ export default function Dashboard() {
       ) : (
         <DataTable
           columns={columns({
+            reRunningId,
             onStart: handleStart,
             onStop: handleStop,
-            onReRun: handleReRun,
-            reRunningId,
           })}
           data={crawls}
+          onBulkReRun={handleBulkReRun}
+          onBulkDelete={handleBulkDelete}
+          selectedRows={selectedCrawls.length}
+          onSelectionChange={handleSelectionChange}
         />
       )}
     </div>

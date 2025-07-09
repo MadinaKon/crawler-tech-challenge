@@ -1,24 +1,36 @@
 // columns.tsx
 import { ActionsCell } from "@/components/ActionsCell";
 import StatusBadge from "@/components/StatusBadge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CrawlResult, CrawlStatus } from "@/types/crawl";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CrawlerResult = CrawlResult;
 
 interface ColumnsHandlers {
-  onStart: (id: number) => void;
-  onStop: (id: number) => void;
-  onReRun: (id: number) => void;
   reRunningId?: number | null;
+  onStart?: (id: number) => void;
+  onStop?: (id: number) => void;
 }
 
 export const columns = ({
+  reRunningId,
   onStart,
   onStop,
-  onReRun,
-  reRunningId,
 }: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
+  {
+    id: "select",
+    header: "Select",
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "url",
     header: "URL",
@@ -106,13 +118,13 @@ export const columns = ({
   },
   {
     id: "actions",
-    cell: ({ row }: { row: any }) => (
+    header: "Actions",
+    cell: ({ row }) => (
       <ActionsCell
         row={row}
-        onStart={onStart}
-        onStop={onStop}
-        onReRun={onReRun}
+        onStart={onStart || (() => {})}
+        onStop={onStop || (() => {})}
       />
-    ), // pass handlers
+    ),
   },
 ];
