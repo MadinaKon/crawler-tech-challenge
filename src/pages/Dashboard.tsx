@@ -165,14 +165,59 @@ export default function Dashboard() {
       return;
     }
 
-    // TODO: Implement bulk delete API endpoint
-    toast({
-      title: "Bulk delete",
-      description: `Would delete ${selectedCrawls.length} crawl(s) - API not implemented yet`,
-    });
+    // Confirm deletion
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedCrawls.length} crawl(s)?`
+      )
+    ) {
+      return;
+    }
 
-    setSelectedCrawls([]);
-  }, [selectedCrawls, toast]);
+    try {
+      const deletedCrawls: Array<{ id: number; url: string; title: string }> =
+        [];
+
+      // Delete each selected crawl
+      for (const id of selectedCrawls) {
+        try {
+          const response = await apiService.deleteCrawl(id.toString());
+          deletedCrawls.push(response.deleted_crawl);
+        } catch (error) {
+          console.error(`Failed to delete crawl ${id}:`, error);
+          toast({
+            title: "Delete failed",
+            description: `Failed to delete crawl ${id}: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      if (deletedCrawls.length > 0) {
+        // Show detailed information about deleted crawls
+        const deletedInfo = deletedCrawls
+          .map((crawl) => `ID ${crawl.id}: ${crawl.title || crawl.url}`)
+          .join("\n");
+
+        toast({
+          title: "Bulk delete completed",
+          description: `Successfully deleted ${deletedCrawls.length} crawl(s):\n${deletedInfo}`,
+        });
+      }
+
+      setSelectedCrawls([]);
+      await fetchCrawls(); // Refresh the data
+    } catch (error) {
+      toast({
+        title: "Bulk delete failed",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [selectedCrawls, fetchCrawls, toast]);
 
   const handleSelectionChange = useCallback((selectedIds: string[]) => {
     // Convert string IDs to numbers - these are now actual crawl IDs

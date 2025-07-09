@@ -66,7 +66,7 @@ export const Toaster: React.FC = () => {
   const { toasts } = useToast();
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="absolute top-full right-0 mt-2 z-50 space-y-2 min-w-80">
       {toasts.map((toast) => (
         <Toast key={toast.id} {...toast} />
       ))}

@@ -68,7 +68,7 @@ function AppContent() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-white shadow-sm border-b relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center">
@@ -76,7 +76,7 @@ function AppContent() {
                   Web Crawler Dashboard
                 </h1>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 relative">
                 <span className="text-sm text-gray-600">
                   Welcome,{" "}
                   {JSON.parse(localStorage.getItem("user") || "{}").name}
@@ -87,6 +87,7 @@ function AppContent() {
                 >
                   Logout
                 </button>
+                <Toaster />
               </div>
             </div>
           </div>
@@ -108,7 +109,6 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
-      <Toaster />
       <AuthProvider>
         <AppContent />
       </AuthProvider>

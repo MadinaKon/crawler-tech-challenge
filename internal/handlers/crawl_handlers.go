@@ -418,31 +418,72 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 	c.JSON(http.StatusOK, crawl)
 }
 
-// StopCrawlByID sets a crawl's status to done
+// StopCrawlByID stops a crawl by ID
 func (h *CrawlHandler) StopCrawlByID(c *gin.Context) {
 	id := c.Param("id")
-	var crawl models.CrawlResult
-	if err := h.db.First(&crawl, id).Error; err != nil {
+	
+	var result models.CrawlResult
+	if err := h.db.First(&result, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Crawl not found"})
 		return
 	}
-
-	// Set status to done and progress to 100
-	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
-		"status":   models.StatusDone,
-		"progress": 100,
-	}).Error; err != nil {
+	
+	// Check if user has permission to stop this crawl
+	userRole, _ := c.Get("user_role")
+	if userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		if result.UserID != userID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Not authorized to stop this crawl"})
+			return
+		}
+	}
+	
+	// Update status to stopped
+	if err := h.db.Model(&result).Update("status", "stopped").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stop crawl"})
 		return
 	}
+	
+	c.JSON(http.StatusOK, gin.H{"message": "Crawl stopped successfully"})
+}
 
-	// Fetch updated crawl
-	if err := h.db.First(&crawl, id).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
+// DeleteCrawlResult deletes a crawl result by ID
+func (h *CrawlHandler) DeleteCrawlResult(c *gin.Context) {
+	id := c.Param("id")
+	
+	var result models.CrawlResult
+	if err := h.db.First(&result, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Crawl not found"})
 		return
 	}
-
-	c.JSON(http.StatusOK, crawl)
+	
+	// Check if user has permission to delete this crawl
+	userRole, _ := c.Get("user_role")
+	if userRole != "admin" {
+		userID, _ := c.Get("user_id")
+		if result.UserID != userID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Not authorized to delete this crawl"})
+			return
+		}
+	}
+	
+	// Store crawl details before deletion
+	deletedCrawl := gin.H{
+		"id":    result.ID,
+		"url":   result.URL,
+		"title": result.Title,
+	}
+	
+	// Delete the crawl (this will also delete related broken links due to CASCADE)
+	if err := h.db.Delete(&result).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete crawl"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Crawl deleted successfully",
+		"deleted_crawl": deletedCrawl,
+	})
 }
 
 // GetStats returns dashboard statistics
