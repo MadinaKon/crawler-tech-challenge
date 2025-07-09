@@ -1,4 +1,5 @@
 // columns.tsx
+import { ActionsCell } from "@/components/ActionsCell";
 import StatusBadge from "@/components/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CrawlResult, CrawlStatus } from "@/types/crawl";
@@ -8,10 +9,14 @@ export type CrawlerResult = CrawlResult;
 
 interface ColumnsHandlers {
   reRunningId?: number | null;
+  onStart?: (id: number) => void;
+  onStop?: (id: number) => void;
 }
 
 export const columns = ({
   reRunningId,
+  onStart,
+  onStop,
 }: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
   {
     id: "select",
@@ -110,5 +115,16 @@ export const columns = ({
       const date = new Date(row.getValue("created_at"));
       return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     },
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => (
+      <ActionsCell
+        row={row}
+        onStart={onStart || (() => {})}
+        onStop={onStop || (() => {})}
+      />
+    ),
   },
 ];

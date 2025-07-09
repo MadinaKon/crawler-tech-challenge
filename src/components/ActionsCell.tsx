@@ -20,12 +20,12 @@ interface ActionsCellProps {
   row: CrawlRow;
   onStart: (id: number) => void;
   onStop: (id: number) => void;
-  onReRun: (id: number) => void;
 }
 
-export function ActionsCell({ row, onStart, onStop, onReRun }: ActionsCellProps) {
+export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
   const navigate = useNavigate();
-  // const status = row.original.status; // No longer needed for button display
+  const status = row.original.status;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -49,15 +49,6 @@ export function ActionsCell({ row, onStart, onStop, onReRun }: ActionsCellProps)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onStop(row.original.id)}>
           Stop
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onReRun(row.original.id)} data-testid="actions-re-run">
-          Re-run Analysis
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => console.log("delete", row.original.id)}
-          data-testid="actions-delete"
-        >
-          Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

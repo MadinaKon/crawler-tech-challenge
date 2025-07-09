@@ -227,6 +227,48 @@ export default function Dashboard() {
     setSelectedCrawls(numericIds);
   }, []);
 
+  const handleStart = useCallback(
+    async (id: number) => {
+      try {
+        await apiService.processCrawl(id.toString());
+        toast({
+          title: "Started processing",
+          description: "Crawl has started.",
+        });
+        await fetchCrawls();
+      } catch (error) {
+        toast({
+          title: "Failed to start crawl",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [fetchCrawls, toast]
+  );
+
+  const handleStop = useCallback(
+    async (id: number) => {
+      try {
+        await apiService.stopCrawl(id.toString());
+        toast({
+          title: "Stopped processing",
+          description: "Crawl has been stopped.",
+        });
+        await fetchCrawls();
+      } catch (error) {
+        toast({
+          title: "Failed to stop crawl",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [fetchCrawls, toast]
+  );
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -278,6 +320,8 @@ export default function Dashboard() {
         <DataTable
           columns={columns({
             reRunningId,
+            onStart: handleStart,
+            onStop: handleStop,
           })}
           data={crawls}
           onBulkReRun={handleBulkReRun}
