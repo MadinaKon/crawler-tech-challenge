@@ -16,8 +16,15 @@ interface CrawlRow {
   };
 }
 
-export function ActionsCell({ row }: { row: CrawlRow }) {
+interface ActionsCellProps {
+  row: CrawlRow;
+  onStart: (id: number) => void;
+  onStop: (id: number) => void;
+}
+
+export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
   const navigate = useNavigate();
+  // const status = row.original.status; // No longer needed for button display
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,6 +42,12 @@ export function ActionsCell({ row }: { row: CrawlRow }) {
           data-testid="actions-view-details"
         >
           View Details
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStart(row.original.id)}>
+          Start
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onStop(row.original.id)}>
+          Stop
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => console.log("re-run", row.original.id)}

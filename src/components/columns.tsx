@@ -6,11 +6,19 @@ import { ColumnDef } from "@tanstack/react-table";
 
 export type CrawlerResult = CrawlResult;
 
-export const columns: ColumnDef<CrawlerResult>[] = [
+interface ColumnsHandlers {
+  onStart: (id: number) => void;
+  onStop: (id: number) => void;
+}
+
+export const columns = ({
+  onStart,
+  onStop,
+}: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
   {
     accessorKey: "url",
     header: "URL",
-    cell: ({ row }) => (
+    cell: ({ row }: { row: any }) => (
       <div className="max-w-[300px] truncate" title={row.getValue("url")}>
         {row.getValue("url")}
       </div>
@@ -19,7 +27,7 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "title",
     header: "Title",
-    cell: ({ row }) => (
+    cell: ({ row }: { row: any }) => (
       <div className="max-w-[200px] truncate" title={row.getValue("title")}>
         {row.getValue("title") || "N/A"}
       </div>
@@ -28,7 +36,7 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "html_version",
     header: "HTML",
-    cell: ({ row }) => row.getValue("html_version") || "N/A",
+    cell: ({ row }: { row: any }) => row.getValue("html_version") || "N/A",
   },
   {
     accessorKey: "internal_links",
@@ -45,16 +53,13 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "has_login_form",
     header: "Login?",
-    cell: ({ row }) => (row.getValue("has_login_form") ? "Yes" : "No"),
+    cell: ({ row }: { row: any }) =>
+      row.getValue("has_login_form") ? "Yes" : "No",
   },
   {
     accessorKey: "status",
     header: "Status",
-    // cell: ({ row }) => {
-    //   const status = row.getValue("status") as CrawlStatus;
-    //   return <StatusBadge status={status} />;
-    // },
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const status = row.getValue("status") as CrawlStatus;
       const progress = row.original.progress;
       return (
@@ -74,13 +79,15 @@ export const columns: ColumnDef<CrawlerResult>[] = [
   {
     accessorKey: "created_at",
     header: "Created",
-    cell: ({ row }) => {
+    cell: ({ row }: { row: any }) => {
       const date = new Date(row.getValue("created_at"));
       return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     },
   },
   {
     id: "actions",
-    cell: ({ row }) => <ActionsCell row={row} />,
+    cell: ({ row }: { row: any }) => (
+      <ActionsCell row={row} onStart={onStart} onStop={onStop} />
+    ), // pass handlers
   },
 ];

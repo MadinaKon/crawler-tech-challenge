@@ -350,6 +350,33 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented", "id": idUint})
 }
 
+// StopCrawlByID sets a crawl's status to done
+func (h *CrawlHandler) StopCrawlByID(c *gin.Context) {
+	id := c.Param("id")
+	var crawl models.CrawlResult
+	if err := h.db.First(&crawl, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Crawl not found"})
+		return
+	}
+
+	// Set status to done and progress to 100
+	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+		"status":   models.StatusDone,
+		"progress": 100,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stop crawl"})
+		return
+	}
+
+	// Fetch updated crawl
+	if err := h.db.First(&crawl, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
+		return
+	}
+
+	c.JSON(http.StatusOK, crawl)
+}
+
 // GetStats returns dashboard statistics
 func (h *CrawlHandler) GetStats(c *gin.Context) {
 	var stats struct {
