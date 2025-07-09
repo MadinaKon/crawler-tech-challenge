@@ -65,8 +65,6 @@ export function DataTable<TData, TValue>({
     globalFilterFn: filterFns.includesString, // <-- add this
   });
 
-  console.log("DATA ", data);
-
   return (
     <div>
       <div className="flex items-center py-4">
