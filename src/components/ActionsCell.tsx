@@ -50,7 +50,7 @@ export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
           Stop
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => console.log("re-run", row.original.id)}
+          onClick={() => onStart(row.original.id)}
           data-testid="actions-re-run"
         >
           Re-run Analysis

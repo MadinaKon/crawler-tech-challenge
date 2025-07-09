@@ -62,18 +62,16 @@ export const columns = ({
     cell: ({ row }: { row: any }) => {
       const status = row.getValue("status") as CrawlStatus;
       const progress = row.original.progress;
-      return (
-        <div>
-          <StatusBadge status={status} />
-          {status === "running" && typeof progress === "number" && (
-            <progress
-              value={progress}
-              max={100}
-              className="ml-2 align-middle"
-            />
-          )}
-        </div>
-      );
+      if (status === "running" && typeof progress === "number") {
+        return (
+          <progress
+            value={progress}
+            max={100}
+            className="ml-2 align-middle w-24"
+          />
+        );
+      }
+      return <StatusBadge status={status} />;
     },
   },
   {
