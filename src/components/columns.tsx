@@ -1,24 +1,40 @@
 // columns.tsx
-import { ActionsCell } from "@/components/ActionsCell";
 import StatusBadge from "@/components/StatusBadge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CrawlResult, CrawlStatus } from "@/types/crawl";
 import { ColumnDef } from "@tanstack/react-table";
 
 export type CrawlerResult = CrawlResult;
 
 interface ColumnsHandlers {
-  onStart: (id: number) => void;
-  onStop: (id: number) => void;
-  onReRun: (id: number) => void;
   reRunningId?: number | null;
 }
 
 export const columns = ({
-  onStart,
-  onStop,
-  onReRun,
   reRunningId,
 }: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: "url",
     header: "URL",
@@ -103,16 +119,5 @@ export const columns = ({
       const date = new Date(row.getValue("created_at"));
       return date.toLocaleDateString() + " " + date.toLocaleTimeString();
     },
-  },
-  {
-    id: "actions",
-    cell: ({ row }: { row: any }) => (
-      <ActionsCell
-        row={row}
-        onStart={onStart}
-        onStop={onStop}
-        onReRun={onReRun}
-      />
-    ), // pass handlers
   },
 ];

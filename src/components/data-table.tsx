@@ -18,6 +18,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  RowSelectionState,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -26,14 +27,31 @@ import React from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  onBulkReRun?: () => void;
+  onBulkDelete?: () => void;
+  selectedRows?: number;
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onBulkReRun,
+  onBulkDelete,
+  selectedRows = 0,
+  onSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
+
+  // Notify parent of selection changes
+  React.useEffect(() => {
+    if (onSelectionChange) {
+      const selectedIds = Object.keys(rowSelection);
+      onSelectionChange(selectedIds);
+    }
+  }, [rowSelection, onSelectionChange]);
 
   const table = useReactTable({
     data,
@@ -41,19 +59,23 @@ export function DataTable<TData, TValue>({
     state: {
       sorting,
       globalFilter,
+      rowSelection,
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     globalFilterFn: filterFns.includesString,
+    enableRowSelection: true,
+    getRowId: (row) => row.id.toString(),
   });
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center justify-between py-4">
         <Input
           id="table-filter"
           placeholder="Filter..."
@@ -61,6 +83,24 @@ export function DataTable<TData, TValue>({
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
         />
+
+        {selectedRows > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              {selectedRows} selected
+            </span>
+            {onBulkReRun && (
+              <Button variant="outline" size="sm" onClick={onBulkReRun}>
+                Re-run Analysis
+              </Button>
+            )}
+            {onBulkDelete && (
+              <Button variant="outline" size="sm" onClick={onBulkDelete}>
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </div>
       <div className="rounded-md border">
         <Table>

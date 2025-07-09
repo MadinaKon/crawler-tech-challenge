@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
   const [reRunningId, setReRunningId] = useState<number | null>(null);
+  const [selectedCrawls, setSelectedCrawls] = useState<number[]>([]);
   const { toast } = useToast();
   const { logout } = useAuth();
 
@@ -80,48 +81,6 @@ export default function Dashboard() {
     loadInitialData();
   }, [fetchCrawls]);
 
-  const handleStart = useCallback(
-    async (id: number) => {
-      try {
-        await apiService.processCrawl(id.toString());
-        toast({
-          title: "Started processing",
-          description: "Crawl has started.",
-        });
-        await fetchCrawls();
-      } catch (error) {
-        toast({
-          title: "Failed to start crawl",
-          description:
-            error instanceof Error ? error.message : "An error occurred",
-          variant: "destructive",
-        });
-      }
-    },
-    [fetchCrawls, toast]
-  );
-
-  const handleStop = useCallback(
-    async (id: number) => {
-      try {
-        await apiService.stopCrawl(id.toString());
-        toast({
-          title: "Stopped processing",
-          description: "Crawl has been stopped.",
-        });
-        await fetchCrawls();
-      } catch (error) {
-        toast({
-          title: "Failed to stop crawl",
-          description:
-            error instanceof Error ? error.message : "An error occurred",
-          variant: "destructive",
-        });
-      }
-    },
-    [fetchCrawls, toast]
-  );
-
   const handleAddUrl = useCallback(
     async (url: string) => {
       setIsAddingUrl(true);
@@ -146,14 +105,6 @@ export default function Dashboard() {
     [fetchCrawls, toast]
   );
 
-  const handleReRun = useCallback(
-    async (id: number) => {
-      setReRunningId(id);
-      await handleStart(id);
-    },
-    [handleStart]
-  );
-
   useEffect(() => {
     if (
       reRunningId &&
@@ -176,6 +127,60 @@ export default function Dashboard() {
     const interval = setInterval(fetchCrawls, 2000); // Poll every 2 seconds
     return () => clearInterval(interval);
   }, [fetchCrawls, crawls]);
+
+  const handleBulkReRun = useCallback(async () => {
+    if (selectedCrawls.length === 0) {
+      toast({
+        title: "No crawls selected",
+        description: "Please select crawls to re-run",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    for (const id of selectedCrawls) {
+      try {
+        await apiService.processCrawl(id.toString());
+      } catch (error) {
+        console.error(`Failed to re-run crawl ${id}:`, error);
+      }
+    }
+
+    toast({
+      title: "Bulk re-run started",
+      description: `Re-running ${selectedCrawls.length} crawl(s)`,
+    });
+
+    setSelectedCrawls([]);
+    await fetchCrawls();
+  }, [selectedCrawls, fetchCrawls, toast]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedCrawls.length === 0) {
+      toast({
+        title: "No crawls selected",
+        description: "Please select crawls to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // TODO: Implement bulk delete API endpoint
+    toast({
+      title: "Bulk delete",
+      description: `Would delete ${selectedCrawls.length} crawl(s) - API not implemented yet`,
+    });
+
+    setSelectedCrawls([]);
+  }, [selectedCrawls, toast]);
+
+  const handleSelectionChange = useCallback((selectedIds: string[]) => {
+    // Convert string IDs to numbers - these are now actual crawl IDs
+    const numericIds = selectedIds
+      .map((id) => parseInt(id, 10))
+      .filter((id) => !isNaN(id));
+    setSelectedCrawls(numericIds);
+  }, []);
 
   if (isLoading) {
     return (
@@ -227,12 +232,13 @@ export default function Dashboard() {
       ) : (
         <DataTable
           columns={columns({
-            onStart: handleStart,
-            onStop: handleStop,
-            onReRun: handleReRun,
             reRunningId,
           })}
           data={crawls}
+          onBulkReRun={handleBulkReRun}
+          onBulkDelete={handleBulkDelete}
+          selectedRows={selectedCrawls.length}
+          onSelectionChange={handleSelectionChange}
         />
       )}
     </div>
