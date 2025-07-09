@@ -114,9 +114,9 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
+      <Toaster />
       <AuthProvider>
         <AppContent />
-        <Toaster />
       </AuthProvider>
     </ToastProvider>
   );

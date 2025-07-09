@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/table";
 import {
   ColumnDef,
+  filterFns,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
@@ -45,6 +47,8 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: filterFns.includesString,
   });
 
   return (
@@ -52,7 +56,7 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center py-4">
         <Input
           id="table-filter"
-          placeholder="Filter users..."
+          placeholder="Filter..."
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
