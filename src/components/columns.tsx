@@ -15,16 +15,7 @@ export const columns = ({
 }: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
   {
     id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
+    header: "Select",
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
