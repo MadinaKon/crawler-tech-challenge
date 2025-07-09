@@ -24,7 +24,7 @@ import {
 } from "@tanstack/react-table";
 import React from "react";
 
-interface DataTableProps<TData, TValue> {
+interface DataTableProps<TData extends { id: string | number }, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   onBulkReRun?: () => void;
@@ -33,7 +33,7 @@ interface DataTableProps<TData, TValue> {
   onSelectionChange?: (selectedIds: string[]) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends { id: string | number }, TValue>({
   columns,
   data,
   onBulkReRun,
