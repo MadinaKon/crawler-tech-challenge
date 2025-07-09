@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/table";
 import {
   ColumnDef,
+  filterFns,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
@@ -33,6 +35,20 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 
+  // const table = useReactTable({
+  //   data,
+  //   columns,
+  //   state: {
+  //     sorting,
+  //     globalFilter,
+  //   },
+  //   onSortingChange: setSorting,
+  //   onGlobalFilterChange: setGlobalFilter,
+  //   getCoreRowModel: getCoreRowModel(),
+  //   getPaginationRowModel: getPaginationRowModel(),
+  //   getSortedRowModel: getSortedRowModel(),
+  // });
+
   const table = useReactTable({
     data,
     columns,
@@ -45,14 +61,18 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(), // <-- add this
+    globalFilterFn: filterFns.includesString, // <-- add this
   });
+
+  console.log("DATA ", data);
 
   return (
     <div>
       <div className="flex items-center py-4">
         <Input
           id="table-filter"
-          placeholder="Filter users..."
+          placeholder="Filter..."
           value={globalFilter ?? ""}
           onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm"
