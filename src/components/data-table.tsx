@@ -61,8 +61,8 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(), // <-- add this
-    globalFilterFn: filterFns.includesString, // <-- add this
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: filterFns.includesString,
   });
 
   return (
