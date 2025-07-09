@@ -345,9 +345,104 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
-	
-	// For now, just return a message that crawling is not implemented
-	c.JSON(http.StatusOK, gin.H{"message": "Crawling functionality not yet implemented", "id": idUint})
+
+	var crawl models.CrawlResult
+	if err := h.db.First(&crawl, idUint).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Crawl not found"})
+		return
+	}
+
+	fmt.Printf("Found crawl ID %d with status: %s\n", crawl.ID, crawl.Status)
+
+	// Allow re-processing if status is done or error
+	if crawl.Status == models.StatusDone || crawl.Status == models.StatusError {
+		fmt.Printf("Resetting crawl ID %d from status %s to queued\n", crawl.ID, crawl.Status)
+		if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+			"status":   models.StatusQueued,
+			"progress": 0,
+		}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset crawl for re-processing"})
+			return
+		}
+		if err := h.db.First(&crawl, idUint).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
+			return
+		}
+		fmt.Printf("Crawl ID %d reset to status: %s\n", crawl.ID, crawl.Status)
+	}
+
+	// Set to running
+	fmt.Printf("Setting crawl ID %d to running\n", crawl.ID)
+	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+		"status":   models.StatusRunning,
+		"progress": 0,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set crawl to running"})
+		return
+	}
+
+	// Simulate crawl progress (for demo; replace with real crawl logic)
+	success := true
+	for i := 20; i <= 100; i += 20 {
+		time.Sleep(2 * time.Second) // Simulate work - increased from 300ms to 2s
+		fmt.Printf("Updating crawl ID %d progress to %d%%\n", crawl.ID, i)
+		if err := h.db.Model(&crawl).Update("progress", i).Error; err != nil {
+			success = false
+			break
+		}
+	}
+
+	// Set to done or error
+	finalStatus := models.StatusDone
+	finalProgress := 100
+	if !success {
+		finalStatus = models.StatusError
+		finalProgress = 0
+	}
+	fmt.Printf("Setting crawl ID %d to final status: %s\n", crawl.ID, finalStatus)
+	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+		"status":   finalStatus,
+		"progress": finalProgress,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finalize crawl"})
+		return
+	}
+
+	// Fetch updated crawl
+	if err := h.db.First(&crawl, idUint).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
+		return
+	}
+
+	fmt.Printf("Returning crawl ID %d with final status: %s\n", crawl.ID, crawl.Status)
+	c.JSON(http.StatusOK, crawl)
+}
+
+// StopCrawlByID sets a crawl's status to done
+func (h *CrawlHandler) StopCrawlByID(c *gin.Context) {
+	id := c.Param("id")
+	var crawl models.CrawlResult
+	if err := h.db.First(&crawl, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Crawl not found"})
+		return
+	}
+
+	// Set status to done and progress to 100
+	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
+		"status":   models.StatusDone,
+		"progress": 100,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to stop crawl"})
+		return
+	}
+
+	// Fetch updated crawl
+	if err := h.db.First(&crawl, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
+		return
+	}
+
+	c.JSON(http.StatusOK, crawl)
 }
 
 // GetStats returns dashboard statistics

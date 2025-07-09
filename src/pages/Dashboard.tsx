@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
+  const [reRunningId, setReRunningId] = useState<number | null>(null);
   const { toast } = useToast();
   const { logout } = useAuth();
 
@@ -79,19 +80,47 @@ export default function Dashboard() {
     loadInitialData();
   }, [fetchCrawls]);
 
-  // Polling for updates (only when there are active crawls)
-  useEffect(() => {
-    const hasActiveCrawls = crawls.some(
-      (crawl) => crawl.status === "queued" || crawl.status === "running"
-    );
+  const handleStart = useCallback(
+    async (id: number) => {
+      try {
+        await apiService.processCrawl(id.toString());
+        toast({
+          title: "Started processing",
+          description: "Crawl has started.",
+        });
+        await fetchCrawls();
+      } catch (error) {
+        toast({
+          title: "Failed to start crawl",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [fetchCrawls, toast]
+  );
 
-    if (!hasActiveCrawls) {
-      return; // Don't poll if no active crawls
-    }
-
-    const interval = setInterval(fetchCrawls, 3000); // Increased to 3 seconds
-    return () => clearInterval(interval);
-  }, [fetchCrawls, crawls]);
+  const handleStop = useCallback(
+    async (id: number) => {
+      try {
+        await apiService.stopCrawl(id.toString());
+        toast({
+          title: "Stopped processing",
+          description: "Crawl has been stopped.",
+        });
+        await fetchCrawls();
+      } catch (error) {
+        toast({
+          title: "Failed to stop crawl",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      }
+    },
+    [fetchCrawls, toast]
+  );
 
   const handleAddUrl = useCallback(
     async (url: string) => {
@@ -116,6 +145,37 @@ export default function Dashboard() {
     },
     [fetchCrawls, toast]
   );
+
+  const handleReRun = useCallback(
+    async (id: number) => {
+      setReRunningId(id);
+      await handleStart(id);
+    },
+    [handleStart]
+  );
+
+  useEffect(() => {
+    if (
+      reRunningId &&
+      !crawls.some((c) => c.id === reRunningId && c.status === "running")
+    ) {
+      setReRunningId(null);
+    }
+  }, [crawls, reRunningId]);
+
+  // Polling for updates (only when there are active crawls)
+  useEffect(() => {
+    const hasActiveCrawls = crawls.some(
+      (crawl) => crawl.status === "queued" || crawl.status === "running"
+    );
+
+    if (!hasActiveCrawls) {
+      return; // Don't poll if no active crawls
+    }
+
+    const interval = setInterval(fetchCrawls, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
+  }, [fetchCrawls, crawls]);
 
   if (isLoading) {
     return (
@@ -165,7 +225,15 @@ export default function Dashboard() {
           </p>
         </div>
       ) : (
-        <DataTable columns={columns} data={crawls} />
+        <DataTable
+          columns={columns({
+            onStart: handleStart,
+            onStop: handleStop,
+            onReRun: handleReRun,
+            reRunningId,
+          })}
+          data={crawls}
+        />
       )}
     </div>
   );

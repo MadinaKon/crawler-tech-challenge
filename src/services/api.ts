@@ -227,6 +227,12 @@ class ApiService {
     });
   }
 
+  async stopCrawl(crawlId: string): Promise<CrawlResult> {
+    return this.makeRequest<CrawlResult>(`/crawls/${crawlId}/stop`, {
+      method: "POST",
+    });
+  }
+
   async processAllCrawls(): Promise<{ message: string }> {
     return this.makeRequest<{ message: string }>("/crawls/process-all", {
       method: "POST",
