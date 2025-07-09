@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
+  const [reRunningId, setReRunningId] = useState<number | null>(null);
   const { toast } = useToast();
   const { logout } = useAuth();
 
@@ -145,6 +146,37 @@ export default function Dashboard() {
     [fetchCrawls, toast]
   );
 
+  const handleReRun = useCallback(
+    async (id: number) => {
+      setReRunningId(id);
+      await handleStart(id);
+    },
+    [handleStart]
+  );
+
+  useEffect(() => {
+    if (
+      reRunningId &&
+      !crawls.some((c) => c.id === reRunningId && c.status === "running")
+    ) {
+      setReRunningId(null);
+    }
+  }, [crawls, reRunningId]);
+
+  // Polling for updates (only when there are active crawls)
+  useEffect(() => {
+    const hasActiveCrawls = crawls.some(
+      (crawl) => crawl.status === "queued" || crawl.status === "running"
+    );
+
+    if (!hasActiveCrawls) {
+      return; // Don't poll if no active crawls
+    }
+
+    const interval = setInterval(fetchCrawls, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
+  }, [fetchCrawls, crawls]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -194,7 +226,12 @@ export default function Dashboard() {
         </div>
       ) : (
         <DataTable
-          columns={columns({ onStart: handleStart, onStop: handleStop })}
+          columns={columns({
+            onStart: handleStart,
+            onStop: handleStop,
+            onReRun: handleReRun,
+            reRunningId,
+          })}
           data={crawls}
         />
       )}

@@ -352,8 +352,11 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("Found crawl ID %d with status: %s\n", crawl.ID, crawl.Status)
+
 	// Allow re-processing if status is done or error
 	if crawl.Status == models.StatusDone || crawl.Status == models.StatusError {
+		fmt.Printf("Resetting crawl ID %d from status %s to queued\n", crawl.ID, crawl.Status)
 		if err := h.db.Model(&crawl).Updates(map[string]interface{}{
 			"status":   models.StatusQueued,
 			"progress": 0,
@@ -365,9 +368,11 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch updated crawl"})
 			return
 		}
+		fmt.Printf("Crawl ID %d reset to status: %s\n", crawl.ID, crawl.Status)
 	}
 
 	// Set to running
+	fmt.Printf("Setting crawl ID %d to running\n", crawl.ID)
 	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
 		"status":   models.StatusRunning,
 		"progress": 0,
@@ -379,7 +384,8 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 	// Simulate crawl progress (for demo; replace with real crawl logic)
 	success := true
 	for i := 20; i <= 100; i += 20 {
-		time.Sleep(300 * time.Millisecond) // Simulate work
+		time.Sleep(2 * time.Second) // Simulate work - increased from 300ms to 2s
+		fmt.Printf("Updating crawl ID %d progress to %d%%\n", crawl.ID, i)
 		if err := h.db.Model(&crawl).Update("progress", i).Error; err != nil {
 			success = false
 			break
@@ -393,6 +399,7 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 		finalStatus = models.StatusError
 		finalProgress = 0
 	}
+	fmt.Printf("Setting crawl ID %d to final status: %s\n", crawl.ID, finalStatus)
 	if err := h.db.Model(&crawl).Updates(map[string]interface{}{
 		"status":   finalStatus,
 		"progress": finalProgress,
@@ -407,6 +414,7 @@ func (h *CrawlHandler) CrawlSingleURL(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("Returning crawl ID %d with final status: %s\n", crawl.ID, crawl.Status)
 	c.JSON(http.StatusOK, crawl)
 }
 

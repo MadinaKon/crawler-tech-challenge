@@ -9,11 +9,15 @@ export type CrawlerResult = CrawlResult;
 interface ColumnsHandlers {
   onStart: (id: number) => void;
   onStop: (id: number) => void;
+  onReRun: (id: number) => void;
+  reRunningId?: number | null;
 }
 
 export const columns = ({
   onStart,
   onStop,
+  onReRun,
+  reRunningId,
 }: ColumnsHandlers): ColumnDef<CrawlerResult>[] => [
   {
     accessorKey: "url",
@@ -62,7 +66,24 @@ export const columns = ({
     cell: ({ row }: { row: any }) => {
       const status = row.getValue("status") as CrawlStatus;
       const progress = row.original.progress;
+      const id = row.original.id;
+
+      console.log("Status cell debug:", {
+        status,
+        progress,
+        id,
+        reRunningId,
+        isRunning: status === "running",
+        hasProgress: typeof progress === "number",
+        isReRunning: reRunningId === id,
+      });
+
       if (status === "running" && typeof progress === "number") {
+        if (reRunningId === id) {
+          console.log("Showing Re-running badge for ID:", id);
+          return <StatusBadge status="running" textOverride="Re-running" />;
+        }
+        console.log("Showing progress bar for ID:", id);
         return (
           <progress
             value={progress}
@@ -71,6 +92,7 @@ export const columns = ({
           />
         );
       }
+      console.log("Showing regular badge for ID:", id, "status:", status);
       return <StatusBadge status={status} />;
     },
   },
@@ -85,7 +107,12 @@ export const columns = ({
   {
     id: "actions",
     cell: ({ row }: { row: any }) => (
-      <ActionsCell row={row} onStart={onStart} onStop={onStop} />
+      <ActionsCell
+        row={row}
+        onStart={onStart}
+        onStop={onStop}
+        onReRun={onReRun}
+      />
     ), // pass handlers
   },
 ];
