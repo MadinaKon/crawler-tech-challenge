@@ -1,4 +1,6 @@
-export const mockCrawlResults = [
+import { CrawlResult } from "@/types/crawl";
+
+export const mockCrawlResults: CrawlResult[] = [
   {
     id: 1,
     url: "https://example.com",
