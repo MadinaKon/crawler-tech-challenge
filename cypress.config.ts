@@ -2,7 +2,8 @@ import { defineConfig } from "cypress";
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:3000",
+    baseUrl:
+      process.env.CYPRESS_BASE_URL || "https://1d495d7a3a11.ngrok-free.app",
     env: {
       apiUrl: "http://localhost:8090/api",
     },
