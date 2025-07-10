@@ -8,10 +8,6 @@ export default {
   },
   server: {
     port: 3000,
-    allowedHosts: [
-      "localhost",
-      "127.0.0.1",
-      ".ngrok-free.app", // allow any ngrok subdomain
-    ],
+    allowedHosts: ["localhost", "127.0.0.1", "1d495d7a3a11.ngrok-free.app"],
   },
 };
