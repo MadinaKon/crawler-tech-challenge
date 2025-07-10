@@ -24,7 +24,6 @@ interface ActionsCellProps {
 
 export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
   const navigate = useNavigate();
-  const status = row.original.status;
 
   return (
     <DropdownMenu>
