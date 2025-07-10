@@ -43,7 +43,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         className={cn(
           // Base styles
-          "bg-popover text-popover-foreground rounded-md border p-1 shadow-md",
+          "bg-white text-gray-900 rounded-md border p-1 shadow-md",
           // Layout and sizing
           "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin)",
           // Overflow handling
@@ -89,17 +89,17 @@ function DropdownMenuItem({
         // Base styles
         "relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
         // Focus states
-        "focus:bg-accent focus:text-accent-foreground outline-hidden select-none",
+        "focus:bg-blue-100 focus:text-blue-700 outline-hidden select-none",
         // Disabled states
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         // Inset variant
         "data-[inset]:pl-8",
         // Destructive variant
-        "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10",
-        "dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive",
-        "data-[variant=destructive]:*:[svg]:!text-destructive",
+        "data-[variant=destructive]:text-red-600 data-[variant=destructive]:focus:bg-red-100",
+        "dark:data-[variant=destructive]:focus:bg-red-200 data-[variant=destructive]:focus:text-red-600",
+        "data-[variant=destructive]:*:[svg]:!text-red-600",
         // Icon styles
-        "[&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:pointer-events-none",
+        "[&_svg:not([class*='text-'])]:text-gray-400 [&_svg]:pointer-events-none",
         "[&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
@@ -121,7 +121,7 @@ function DropdownMenuCheckboxItem({
         // Base styles
         "relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm",
         // Focus states
-        "focus:bg-accent focus:text-accent-foreground outline-hidden select-none",
+        "focus:bg-blue-100 focus:text-blue-700 outline-hidden select-none",
         // Disabled states
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         // Icon styles
@@ -164,7 +164,7 @@ function DropdownMenuRadioItem({
         // Base styles
         "relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm",
         // Focus states
-        "focus:bg-accent focus:text-accent-foreground outline-hidden select-none",
+        "focus:bg-blue-100 focus:text-blue-700 outline-hidden select-none",
         // Disabled states
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         // Icon styles
@@ -210,7 +210,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("bg-border -mx-1 my-1 h-px", className)}
+      className={cn("bg-gray-200 -mx-1 my-1 h-px", className)}
       {...props}
     />
   );
@@ -223,10 +223,7 @@ function DropdownMenuShortcut({
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn(
-        "text-muted-foreground ml-auto text-xs tracking-widest",
-        className
-      )}
+      className={cn("text-gray-400 ml-auto text-xs tracking-widest", className)}
       {...props}
     />
   );
@@ -251,7 +248,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+        "focus:bg-blue-100 focus:text-blue-700 data-[state=open]:bg-blue-100 data-[state=open]:text-blue-700 flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
         className
       )}
       {...props}
@@ -271,7 +268,7 @@ function DropdownMenuSubContent({
       data-slot="dropdown-menu-sub-content"
       className={cn(
         // Base styles
-        "bg-popover text-popover-foreground rounded-md border p-1 shadow-lg",
+        "bg-white text-gray-900 rounded-md border p-1 shadow-lg",
         // Layout and sizing
         "z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin)",
         // Overflow handling
