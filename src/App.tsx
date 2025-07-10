@@ -34,8 +34,12 @@ function AppContent() {
   };
 
   const handleLogout = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+      logout();
+      return;
+    }
     try {
-      // Call logout API
       await apiService.logout();
     } catch (error) {
       console.error("Logout API call failed:", error);
