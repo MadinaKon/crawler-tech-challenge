@@ -176,16 +176,10 @@ export default function Dashboard() {
       return;
     }
 
-    if (selectedCrawls.length > 0) {
-      handleBulkDeleteClick();
-      return;
-    }
-
     try {
       const deletedCrawls: Array<{ id: number; url: string; title: string }> =
         [];
 
-      // Delete each selected crawl
       for (const id of selectedCrawls) {
         try {
           const response = await apiService.deleteCrawl(id.toString());
@@ -203,7 +197,6 @@ export default function Dashboard() {
       }
 
       if (deletedCrawls.length > 0) {
-        // Show detailed information about deleted crawls
         const deletedInfo = deletedCrawls
           .map((crawl) => `ID ${crawl.id}: ${crawl.title || crawl.url}`)
           .join("\n");
@@ -226,13 +219,21 @@ export default function Dashboard() {
     }
   }, [selectedCrawls, fetchCrawls, toast]);
 
-  const handleBulkDeleteClick = () => {
-    setShowDeleteDialog(true);
-  };
-
   const handleBulkDeleteConfirm = async () => {
     setShowDeleteDialog(false);
     await handleBulkDelete();
+  };
+
+  const handleOpenDeleteDialog = () => {
+    if (selectedCrawls.length === 0) {
+      toast({
+        title: "No crawls selected",
+        description: "Please select crawls to delete",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowDeleteDialog(true);
   };
 
   const handleSelectionChange = useCallback((selectedIds: string[]) => {
@@ -341,7 +342,7 @@ export default function Dashboard() {
           })}
           data={crawls}
           onBulkReRun={handleBulkReRun}
-          onBulkDelete={handleBulkDelete}
+          onBulkDelete={handleOpenDeleteDialog}
           selectedRows={selectedCrawls.length}
           onSelectionChange={handleSelectionChange}
         />
