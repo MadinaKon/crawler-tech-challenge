@@ -9,7 +9,7 @@ describe("Crawl Details", () => {
   describe("Crawl Details Page Layout", () => {
     beforeEach(() => {
       // Mock crawl details data
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,
@@ -69,7 +69,7 @@ describe("Crawl Details", () => {
   describe("Broken Links Section", () => {
     beforeEach(() => {
       // Mock crawl details
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,
@@ -88,7 +88,7 @@ describe("Crawl Details", () => {
       }).as("getCrawlDetails");
 
       // Mock broken links data
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1/broken-links", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1/broken-links`, {
         statusCode: 200,
         body: [
           {
@@ -141,7 +141,7 @@ describe("Crawl Details", () => {
 
     it("should display empty state when no broken links", () => {
       // Mock empty broken links
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1/broken-links", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1/broken-links`, {
         statusCode: 200,
         body: [],
       }).as("getEmptyBrokenLinks");
@@ -156,7 +156,7 @@ describe("Crawl Details", () => {
 
   describe("Navigation", () => {
     beforeEach(() => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,
@@ -197,7 +197,7 @@ describe("Crawl Details", () => {
 
   describe("Error Handling", () => {
     it("should handle API errors gracefully", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 404,
         body: { error: "Crawl not found" },
       }).as("getCrawlError");
@@ -210,7 +210,7 @@ describe("Crawl Details", () => {
     });
 
     it("should handle network errors", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         forceNetworkError: true,
       }).as("getCrawlNetworkError");
 
@@ -224,7 +224,7 @@ describe("Crawl Details", () => {
 
   describe("Loading States", () => {
     it("should show loading state while fetching crawl details", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", (req) => {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, (req) => {
         req.reply({
           delay: 1000,
           statusCode: 200,
@@ -259,7 +259,7 @@ describe("Crawl Details", () => {
 
   describe("Different Crawl Statuses", () => {
     it("should display pending crawl correctly", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,
@@ -285,7 +285,7 @@ describe("Crawl Details", () => {
     });
 
     it("should display failed crawl correctly", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,

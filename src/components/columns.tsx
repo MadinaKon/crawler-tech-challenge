@@ -80,22 +80,11 @@ export const columns = ({
       const progress = row.original.progress;
       const id = row.original.id;
 
-      console.log("Status cell debug:", {
-        status,
-        progress,
-        id,
-        reRunningId,
-        isRunning: status === "running",
-        hasProgress: typeof progress === "number",
-        isReRunning: reRunningId === id,
-      });
-
       if (status === "running" && typeof progress === "number") {
         if (reRunningId === id) {
-          console.log("Showing Re-running badge for ID:", id);
           return <StatusBadge status="running" textOverride="Re-running" />;
         }
-        console.log("Showing progress bar for ID:", id);
+
         return (
           <progress
             value={progress}
@@ -104,7 +93,7 @@ export const columns = ({
           />
         );
       }
-      console.log("Showing regular badge for ID:", id, "status:", status);
+
       return <StatusBadge status={status} />;
     },
   },

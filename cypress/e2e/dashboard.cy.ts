@@ -23,7 +23,7 @@ describe("Dashboard", () => {
 
     it("should show empty state when no crawls exist", () => {
       // Mock empty response
-      cy.intercept("GET", "http://localhost:8090/api/crawls", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 200,
         body: [],
       }).as("getCrawls");
@@ -43,7 +43,7 @@ describe("Dashboard", () => {
     it("should successfully add a URL for crawling", () => {
       const testUrl = "https://example.com";
 
-      cy.intercept("POST", "http://localhost:8090/api/crawls", {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 201,
         body: {
           id: 1,
@@ -53,7 +53,7 @@ describe("Dashboard", () => {
         },
       }).as("createCrawl");
 
-      cy.intercept("GET", "http://localhost:8090/api/crawls", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 200,
         body: [
           {
@@ -105,7 +105,7 @@ describe("Dashboard", () => {
     });
 
     it("should handle network errors gracefully", () => {
-      cy.intercept("POST", "http://localhost:8090/api/crawls", {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 500,
         body: { error: "Internal server error" },
       }).as("createCrawlError");
@@ -120,7 +120,7 @@ describe("Dashboard", () => {
     });
 
     it("should allow adding a new URL for crawling", () => {
-      cy.intercept("POST", "http://localhost:8090/api/crawls").as("addCrawl");
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/crawls`).as("addCrawl");
       cy.get('[data-testid="dashboard-url-input"]').type("https://example.com");
       cy.get('[data-testid="dashboard-add-url"]').click();
       cy.wait("@addCrawl");
@@ -128,7 +128,7 @@ describe("Dashboard", () => {
     });
 
     it("should show empty state when there are no crawls", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls", { body: [] }).as(
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, { body: [] }).as(
         "getCrawls"
       );
       cy.reload();
@@ -140,7 +140,7 @@ describe("Dashboard", () => {
   describe("Crawl Data Display", () => {
     beforeEach(() => {
       // Mock crawl data
-      cy.intercept("GET", "http://localhost:8090/api/crawls", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 200,
         body: [
           {
@@ -207,12 +207,60 @@ describe("Dashboard", () => {
           cy.get("button").should("contain", "View Details");
         });
     });
+
+    it("should allow bulk re-run and delete", () => {
+      // Select first two rows
+      cy.get('[data-testid="dashboard-table-row"]')
+        .eq(0)
+        .find('input[type="checkbox"]')
+        .check();
+      cy.get('[data-testid="dashboard-table-row"]')
+        .eq(1)
+        .find('input[type="checkbox"]')
+        .check();
+
+      // Bulk re-run
+      cy.get('[data-testid="bulk-re-run"]').click();
+      cy.get('[data-testid="toast"]').should("contain", "Bulk re-run started");
+
+      // Bulk delete
+      cy.get('[data-testid="dashboard-table-row"]')
+        .eq(0)
+        .find('input[type="checkbox"]')
+        .check();
+      cy.get('[data-testid="dashboard-table-row"]')
+        .eq(1)
+        .find('input[type="checkbox"]')
+        .check();
+      cy.get('[data-testid="bulk-delete"]').click();
+      cy.get('[data-testid="toast"]').should(
+        "contain",
+        "Bulk delete completed"
+      );
+    });
+
+    it("should allow individual Start, Stop, and View Details actions", () => {
+      // Open actions menu for first row
+      cy.get('[data-testid="actions-menu"]').first().click();
+      cy.get('[data-testid="actions-start"]').click();
+      cy.get('[data-testid="toast"]').should("contain", "Started processing");
+
+      // Open actions menu for first row again
+      cy.get('[data-testid="actions-menu"]').first().click();
+      cy.get('[data-testid="actions-stop"]').click();
+      cy.get('[data-testid="toast"]').should("contain", "Stopped processing");
+
+      // Open actions menu for first row again
+      cy.get('[data-testid="actions-menu"]').first().click();
+      cy.get('[data-testid="actions-view-details"]').click();
+      cy.url().should("include", "/detail/");
+    });
   });
 
   describe("Crawl Details Navigation", () => {
     beforeEach(() => {
       // Mock crawl data
-      cy.intercept("GET", "http://localhost:8090/api/crawls", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, {
         statusCode: 200,
         body: [
           {
@@ -237,7 +285,7 @@ describe("Dashboard", () => {
     });
 
     it("should navigate to crawl details page", () => {
-      cy.intercept("GET", "http://localhost:8090/api/crawls/1", {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls/1`, {
         statusCode: 200,
         body: {
           id: 1,
@@ -272,7 +320,7 @@ describe("Dashboard", () => {
   describe("Loading States", () => {
     it("should show loading state while fetching data", () => {
       // Delay the API response to test loading state
-      cy.intercept("GET", "http://localhost:8090/api/crawls", (req) => {
+      cy.intercept("GET", `${Cypress.env("apiUrl")}/crawls`, (req) => {
         req.reply({
           delay: 1000,
           statusCode: 200,
@@ -292,7 +340,7 @@ describe("Dashboard", () => {
     });
 
     it("should show loading state while adding URL", () => {
-      cy.intercept("POST", "http://localhost:8090/api/crawls", (req) => {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/crawls`, (req) => {
         req.reply({
           delay: 1000,
           statusCode: 201,

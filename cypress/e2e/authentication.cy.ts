@@ -15,7 +15,7 @@ describe("Authentication", () => {
     });
 
     it("should successfully login with valid admin credentials", () => {
-      cy.intercept("POST", "http://localhost:8090/api/auth/login").as(
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/login`).as(
         "loginRequest"
       );
 
@@ -33,7 +33,7 @@ describe("Authentication", () => {
     });
 
     it("should successfully login with valid user credentials", () => {
-      cy.intercept("POST", "http://localhost:8090/api/auth/login").as(
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/login`).as(
         "loginRequest"
       );
 
@@ -49,7 +49,7 @@ describe("Authentication", () => {
     });
 
     it("should show error message with invalid credentials", () => {
-      cy.intercept("POST", "http://localhost:8090/api/auth/login", {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/login`, {
         statusCode: 401,
         body: { error: "Invalid credentials" },
       }).as("loginRequest");
@@ -85,7 +85,7 @@ describe("Authentication", () => {
     });
 
     it("should successfully register a new user", () => {
-      cy.intercept("POST", "http://localhost:8090/api/auth/register").as(
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/register`).as(
         "registerRequest"
       );
 
@@ -109,7 +109,7 @@ describe("Authentication", () => {
     });
 
     it("should show error for duplicate email registration", () => {
-      cy.intercept("POST", "http://localhost:8090/api/auth/register", {
+      cy.intercept("POST", `${Cypress.env("apiUrl")}/auth/register`, {
         statusCode: 400,
         body: { error: "Email already exists" },
       }).as("registerRequest");

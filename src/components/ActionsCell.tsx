@@ -32,6 +32,7 @@ export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
           variant="ghost"
           className="h-8 w-8 p-0"
           aria-label="More actions"
+          data-testid="actions-menu"
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
@@ -43,10 +44,16 @@ export function ActionsCell({ row, onStart, onStop }: ActionsCellProps) {
         >
           View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onStart(row.original.id)}>
+        <DropdownMenuItem
+          onClick={() => onStart(row.original.id)}
+          data-testid="actions-start"
+        >
           Start
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onStop(row.original.id)}>
+        <DropdownMenuItem
+          onClick={() => onStop(row.original.id)}
+          data-testid="actions-stop"
+        >
           Stop
         </DropdownMenuItem>
       </DropdownMenuContent>
