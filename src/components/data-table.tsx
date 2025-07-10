@@ -90,12 +90,22 @@ export function DataTable<TData extends { id: string | number }, TValue>({
               {selectedRows} selected
             </span>
             {onBulkReRun && (
-              <Button variant="outline" size="sm" onClick={onBulkReRun}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBulkReRun}
+                data-testid="bulk-re-run"
+              >
                 Re-run Analysis
               </Button>
             )}
             {onBulkDelete && (
-              <Button variant="outline" size="sm" onClick={onBulkDelete}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onBulkDelete}
+                data-testid="bulk-delete"
+              >
                 Delete
               </Button>
             )}
@@ -122,7 +132,7 @@ export function DataTable<TData extends { id: string | number }, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} data-testid="dashboard-table-row">
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

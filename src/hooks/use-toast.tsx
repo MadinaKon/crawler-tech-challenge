@@ -87,7 +87,10 @@ const Toast: React.FC<ToastOptions> = ({
   };
 
   return (
-    <div className={`${baseClasses} ${variantClasses[variant]}`}>
+    <div
+      data-testid="toast"
+      className={`${baseClasses} ${variantClasses[variant]}`}
+    >
       <div className="font-medium">{title}</div>
       {description && <div className="text-sm mt-1">{description}</div>}
     </div>

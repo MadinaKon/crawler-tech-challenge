@@ -78,11 +78,13 @@ const UrlInput = ({ onAddUrl, onError, isLoading = false }: UrlInputProps) => {
             onChange={(e) => setUrl(e.target.value)}
             className="flex-1"
             disabled={isLoading}
+            data-testid="dashboard-url-input"
           />
           <Button
             type="submit"
             disabled={isLoading}
             className="bg-blue-600 hover:bg-blue-700"
+            data-testid="dashboard-add-url"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
