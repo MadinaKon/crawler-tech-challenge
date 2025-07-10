@@ -2,6 +2,10 @@
 
 A full-stack web application for crawling websites and analyzing their content. Built with React (frontend) and Go (backend), featuring user authentication, bulk operations, and real-time crawl monitoring.
 
+## 🌐 Live Demo
+
+You can access the app via ngrok at: [https://1d495d7a3a11.ngrok-free.app/](https://1d495d7a3a11.ngrok-free.app/)
+
 ## 🚀 Features
 
 - **User Authentication**: Secure login/registration system
