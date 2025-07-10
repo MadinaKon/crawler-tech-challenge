@@ -291,3 +291,11 @@ This project is licensed under the MIT License.
 ## 📞 Support
 
 For questions or issues, please open an issue in the repository or contact me at **madina.jampasee@gmail.com**.
+
+## Public Demo (ngrok)
+
+You can access the live frontend here:
+
+👉 [https://7434888ed607.ngrok-free.app](https://7434888ed607.ngrok-free.app)
+
+> **Note:** This link is temporary and may change if the ngrok tunnel is restarted. If the link does not work, please contact the maintainer for an updated URL.
