@@ -2,12 +2,9 @@
 -- These users are for development/testing only and should not be used in production
 
 -- Insert demo admin user (password: admin123)
-INSERT INTO users (email, password_hash, name, role, is_active, email_verified) VALUES 
-('admin@webcrawler.com', '$2a$10$2Kx7j7Xwz.SgmOd8YNchouob3iMxRshSllDJUScAdaX/Li2VFKvKC', 'Admin User', 'admin', TRUE, TRUE);
+INSERT INTO users (email, password_hash, name, role, is_active) VALUES 
+('admin@webcrawler.com', '$2b$10$x/FT8HMKT4q8MgrkkkOvOOouP27y2EHJiZnXzX1liSz0gs/sByMSm', 'Admin User', 'admin', TRUE);
 
 -- Insert demo regular user (password: user123)
-INSERT INTO users (email, password_hash, name, role, is_active, email_verified) VALUES 
-('user@webcrawler.com', '$2a$10$77udFduq3Y6q2JMKVpsoHeNHsX8D79E9zBaCyL8mKCbUAfOn.4.Z6', 'Test User', 'user', TRUE, TRUE);
-
--- Note: The password hash above is for 'password' - you may need to generate proper bcrypt hashes
--- for 'admin123' and 'user123' in a production environment 
+INSERT INTO users (email, password_hash, name, role, is_active) VALUES 
+('user@webcrawler.com', '$2b$10$5n2DyQscBL2QIHhQ05kCX.7TIucTLc9aE2JtPum7yipr2NtQPffM.', 'Test User', 'user', TRUE); 
