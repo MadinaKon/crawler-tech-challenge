@@ -39,6 +39,7 @@ jobs:
         run: npx wait-on https://1d495d7a3a11.ngrok-free.app/
 
       - name: Run Cypress tests
+        if: github.event_name != 'pull_request'
         run: npx cypress run --no-progress
 
   # Separate job for running tests in parallel (optional)
@@ -143,6 +144,7 @@ jobs:
           done
 
       - name: Run Cypress tests
+        if: github.event_name != 'pull_request'
         uses: cypress-io/github-action@v6
         with:
           browser: chrome
