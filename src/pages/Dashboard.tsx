@@ -51,6 +51,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { logout } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const fetchCrawls = useCallback(async () => {
     try {
@@ -84,13 +85,14 @@ export default function Dashboard() {
 
   // Initial load
   useEffect(() => {
+    if (!isAuthenticated) return;
     const loadInitialData = async () => {
       setIsLoading(true);
       await fetchCrawls();
       setIsLoading(false);
     };
     loadInitialData();
-  }, [fetchCrawls]);
+  }, [fetchCrawls, isAuthenticated]);
 
   const handleAddUrl = useCallback(
     async (url: string) => {

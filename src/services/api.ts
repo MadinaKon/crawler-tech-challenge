@@ -90,6 +90,10 @@ class ApiService {
   }
 
   private async handleResponse<T = unknown>(response: Response): Promise<T> {
+    if (response.status === 401) {
+      throw new Error("Authentication failed");
+    }
+
     const contentType = response.headers.get("content-type");
 
     if (contentType && contentType.includes("application/json")) {
@@ -233,9 +237,7 @@ class ApiService {
     });
   }
 
-  async deleteCrawl(
-    crawlId: string
-  ): Promise<{
+  async deleteCrawl(crawlId: string): Promise<{
     message: string;
     deleted_crawl: { id: number; url: string; title: string };
   }> {
