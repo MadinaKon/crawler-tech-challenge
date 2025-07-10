@@ -16,7 +16,7 @@ A full-stack web application for crawling websites and analyzing their content. 
 
 ### Frontend
 
-- **React 19** with TypeScript
+- **React 18** with TypeScript
 - **Vite** for fast development and building
 - **Tailwind CSS** for styling
 - **React Router** for navigation
