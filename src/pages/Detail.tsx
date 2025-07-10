@@ -6,6 +6,16 @@ import { CrawlResult, CrawlStatus } from "@/types/crawl";
 import { AlertTriangle, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface BrokenLink {
   id: number;
@@ -117,6 +127,15 @@ export default function Detail() {
         return "outline";
     }
   };
+
+  const chartData = crawlResult
+    ? [
+        { name: "Internal", value: crawlResult.internal_links },
+        { name: "External", value: crawlResult.external_links },
+        { name: "Inaccessible", value: crawlResult.inaccessible_links },
+        { name: "Broken", value: brokenLinks.length },
+      ]
+    : [];
 
   return (
     <div className="container mx-auto py-10">
@@ -292,6 +311,24 @@ export default function Detail() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {crawlResult && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">
+            Crawl Link Distribution
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#2563eb" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
