@@ -2,6 +2,16 @@
 
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import UrlInput from "@/components/UrlInput";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +50,7 @@ export default function Dashboard() {
   const [selectedCrawls, setSelectedCrawls] = useState<number[]>([]);
   const { toast } = useToast();
   const { logout } = useAuth();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const fetchCrawls = useCallback(async () => {
     try {
@@ -165,12 +176,8 @@ export default function Dashboard() {
       return;
     }
 
-    // Confirm deletion
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedCrawls.length} crawl(s)?`
-      )
-    ) {
+    if (selectedCrawls.length > 0) {
+      handleBulkDeleteClick();
       return;
     }
 
@@ -218,6 +225,15 @@ export default function Dashboard() {
       });
     }
   }, [selectedCrawls, fetchCrawls, toast]);
+
+  const handleBulkDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    setShowDeleteDialog(false);
+    await handleBulkDelete();
+  };
 
   const handleSelectionChange = useCallback((selectedIds: string[]) => {
     // Convert string IDs to numbers - these are now actual crawl IDs
@@ -330,6 +346,25 @@ export default function Dashboard() {
           onSelectionChange={handleSelectionChange}
         />
       )}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Crawls</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedCrawls.length} crawl(s)?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={handleBulkDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
