@@ -31,7 +31,7 @@ jobs:
       - name: Start Vite dev server
         run: npm run dev &
       - name: Wait for Vite to be ready
-        run: npx wait-on https://1d495d7a3a11.ngrok-free.app/
+        run: npx wait-on https://180e7ee86b80.ngrok-free.app/
       # - name: Run Cypress tests
       #   run: npx cypress run --no-progress
 
