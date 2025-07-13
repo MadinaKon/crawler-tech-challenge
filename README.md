@@ -5,7 +5,7 @@ A full-stack web application for crawling websites and analyzing their content. 
 ## 🌐 Live Demo
 
 You can access the app via ngrok at:
-[https://180e7ee86b80.ngrok-free.app](https://ed0078bb80ec.ngrok-free.app/)
+[https://ed0078bb80ec.ngrok-free.app/](https://ed0078bb80ec.ngrok-free.app/)
 
 ## 🚀 Features
 
